@@ -1,0 +1,87 @@
+import 'dart:developer';
+
+import 'package:swiss_gold/core/models/cart_model.dart';
+import 'package:swiss_gold/core/models/message.dart';
+import 'package:swiss_gold/core/services/cart_service.dart';
+import 'package:swiss_gold/core/services/local_storage.dart';
+import 'package:swiss_gold/core/utils/enum/view_state.dart';
+import 'package:swiss_gold/core/view_models/base_model.dart';
+
+class CartViewModel extends BaseModel {
+  bool? _isGuest;
+  bool? get isGuest => _isGuest;
+
+  CartModel? _cartModel;
+  CartModel? get cartModel => _cartModel;
+
+  ViewState? _quantityState;
+  ViewState? get quantityState => _quantityState;
+
+  List<CartItem> _cartItemList = [];
+  List<CartItem> get cartList => _cartItemList;
+
+  MessageModel? _messageModel;
+  MessageModel? get messageModel => _messageModel;
+
+  Future<void> getCart() async {
+    
+    setState(ViewState.loading);
+    _cartModel = await CartService.getCart();
+    _cartItemList.clear();
+
+    for (var cartItem in cartModel!.data) {
+      for (var item in cartItem.items) {
+        _cartItemList.add(item);
+      }
+    }
+
+    setState(ViewState.idle);
+    notifyListeners();
+  }
+
+  Future<void> checkGuestMode() async {
+    _isGuest = await LocalStorage.getBool('isGuest');
+    notifyListeners();
+  }
+
+  Future<MessageModel?> deleteFromCart(Map<String, dynamic> payload) async {
+    setState(ViewState.loading);
+    _messageModel = await CartService.deleteFromCart(payload);
+    setState(ViewState.idle);
+    notifyListeners();
+    return _messageModel;
+  }
+
+  Future<MessageModel?> addToCart(Map<String, dynamic> payload) async {
+    setState(ViewState.loading);
+    _messageModel = await CartService.addToCart(payload);
+    setState(ViewState.idle);
+    notifyListeners();
+    return _messageModel;
+  }
+
+  Future<void> incrementQuantity(Map<String, dynamic> payload, index) async {
+    _quantityState = ViewState.loading;
+    notifyListeners();
+    _messageModel = await CartService.incrementQuantity(payload);
+    if (_messageModel!.success == true) {
+      _cartItemList[index].quantity = _cartItemList[index].quantity + 1;
+    }
+
+    _quantityState = ViewState.idle;
+    notifyListeners();
+  }
+
+  Future<MessageModel?> decrementQuantity(
+      Map<String, dynamic> payload, index) async {
+    _quantityState = ViewState.loading;
+    notifyListeners();
+    _messageModel = await CartService.decrementQuantity(payload);
+    if (_messageModel!.success == true) {
+      _cartItemList[index].quantity = _cartItemList[index].quantity - 1;
+    }
+    _quantityState = ViewState.idle;
+    notifyListeners();
+    return _messageModel;
+  }
+}
