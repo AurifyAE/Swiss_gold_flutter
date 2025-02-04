@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:swiss_gold/core/models/message.dart';
 import 'package:swiss_gold/core/services/local_storage.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/view_models/base_model.dart';
@@ -7,18 +8,19 @@ class ProfileViewModel extends BaseModel {
   UserModel? _userModel;
   UserModel? get userModel => _userModel;
 
+  MessageModel? _messageModel;
+  MessageModel? get messageModel => _messageModel;
+
   Future<void> getProfile() async {
     setState(ViewState.loading);
 
     try {
-      // Fetch data from local storage
-      final  userName = await LocalStorage.getString('userName') ?? "Guest";
+      
+      final userName = await LocalStorage.getString('userName') ?? "Guest";
       String category = await LocalStorage.getString('category') ?? "";
       String mobile = await LocalStorage.getString('mobile') ?? "";
       String location = await LocalStorage.getString('location') ?? "";
-      log(userName);
 
-      // Update the user model
       _userModel = UserModel(
         category: category,
         userName: userName,
@@ -26,7 +28,6 @@ class ProfileViewModel extends BaseModel {
         location: location,
       );
 
-      log('User Profile: $_userModel');
     } catch (e) {
       log('Error fetching profile: $e');
     } finally {
@@ -34,6 +35,8 @@ class ProfileViewModel extends BaseModel {
       notifyListeners();
     }
   }
+
+  
 }
 
 class UserModel {

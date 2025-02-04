@@ -11,33 +11,33 @@ class WishCard extends StatelessWidget {
   final String prodTitle;
   final void Function()? onRemoveTapped;
 
-  const WishCard(
-      {super.key,
-      required this.prodImg,
-      required this.price,
-      required this.prodTitle,
-    
-      this.onRemoveTapped,});
+  const WishCard({
+    super.key,
+    required this.prodImg,
+    required this.price,
+    required this.prodTitle,
+    this.onRemoveTapped,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 14.h),
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
         border: Border.all(
           color: UIColor.gold,
         ),
-        borderRadius: BorderRadius.circular(22.sp),
+        borderRadius: BorderRadius.circular(12.sp),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-              borderRadius: BorderRadius.circular(22.sp),
+              borderRadius: BorderRadius.circular(12.sp),
               child: CachedNetworkImage(
                 imageUrl: prodImg,
-                width: 100.sp,
+                width: 80.w,
               )),
           SizedBox(
             width: 10.w,
@@ -46,17 +46,25 @@ class WishCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                prodTitle,
-                style: TextStyle(color: UIColor.gold, fontSize: 22.sp),
+                '${prodTitle.toString().length > 16 ? prodTitle.toString().substring(0, 16) : prodTitle}..',
+                style: TextStyle(
+                  color: UIColor.gold,
+                  fontSize: 16.sp,
+                  fontFamily: 'Familiar',
+                ),
               ),
+              SizedBox(height: 5.h,),
               Text(
                 price,
-                style: TextStyle(color: UIColor.gold, fontSize: 16.sp),
+                style: TextStyle(
+                  color: UIColor.gold,
+                  fontSize: 16.sp,
+                  fontFamily: 'Familiar',
+                ),
               ),
               SizedBox(
                 height: 5.h,
               ),
-             
             ],
           ),
           Spacer(),

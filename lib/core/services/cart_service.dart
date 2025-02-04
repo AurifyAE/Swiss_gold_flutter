@@ -25,12 +25,17 @@ class CartService {
 
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        // log(responseData.toString());
         return CartModel.fromJson(responseData);
       } else {
+        //  Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        // log(responseData.toString());
         return null;
       }
     } catch (e) {
-      // log(e.toString());
+      log(e.toString());
       return null;
     }
   }
@@ -62,6 +67,26 @@ class CartService {
     }
   }
 
+  static Future<void> confirmQuantity(Map<String, dynamic> payload) async {
+    try {
+      log('payload ${payload.toString()}');
+      var response = await client.post(Uri.parse(confirmQuantityUrl),
+          headers: {
+            'X-Secret-Key': secreteKey,
+            'Content-Type': 'application/json'
+          }, // Encoding payload to JSON
+          body: jsonEncode(payload));
+
+      if (response.statusCode == 200) {
+        log(response.body);
+      } else {
+        log(response.body);
+      }
+    } catch (e) {
+      log(e.toString());
+    }
+  }
+
   static Future<MessageModel?> incrementQuantity(
       Map<String, dynamic> payload) async {
     try {
@@ -77,7 +102,6 @@ class CartService {
           'Content-Type': 'application/json'
         },
       );
-
 
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = jsonDecode(response.body);

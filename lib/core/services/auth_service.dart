@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:swiss_gold/core/models/message.dart';
 import 'package:swiss_gold/core/models/user_model.dart';
@@ -51,8 +50,8 @@ class AuthService {
   static Future<MessageModel?> changePassword(
       Map<String, dynamic> payload) async {
     try {
-      var response = await client.patch(
-        Uri.parse(loginUrl),
+      var response = await client.put(
+        Uri.parse(changePassUrl),
         headers: {
           'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'

@@ -8,10 +8,12 @@ void customSnackBar(
     {required BuildContext context,
     int? duration,
     Color? bgColor,
+    double? width,
     required String title,
     Color? titleColor}) {
   final snack = SnackBar(
-    padding: const EdgeInsets.all(25),
+    width: width??double.infinity,
+    padding: const EdgeInsets.all(8),
     duration: Duration(seconds: duration ?? 2),
     backgroundColor: bgColor ?? Colors.black.withOpacity(0.8),
     shape: RoundedRectangleBorder(
@@ -50,10 +52,12 @@ void customSnackBarSuccess(
       child: Text(
         title,
         style: TextStyle(
+                          fontFamily: 'Familiar',
+
             color: titleColor ?? Colors.white,
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            fontFamily: 'Nunito'),
+           ),
       ),
     ),
   );

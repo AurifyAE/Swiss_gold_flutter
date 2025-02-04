@@ -5,10 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:swiss_gold/core/services/local_storage.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
+import 'package:swiss_gold/core/utils/navigate.dart';
+import 'package:swiss_gold/core/utils/widgets/custom_alert.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
-import 'package:swiss_gold/core/utils/widgets/custom_tile.dart';
 import 'package:swiss_gold/core/view_models/profile_view_model.dart';
 import 'package:swiss_gold/views/login/login_view.dart';
+import 'package:swiss_gold/views/profile/change_password_view.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -17,15 +19,32 @@ class ProfileView extends StatefulWidget {
   State<ProfileView> createState() => _ProfileViewState();
 }
 
-class _ProfileViewState extends State<ProfileView> {
-  final isGuest = LocalStorage.getBool('isGuest');
+class _ProfileViewState extends State<ProfileView>
+    with TickerProviderStateMixin {
+  bool? isGuest;
+  AnimationController? animationController;
+  Animation<double>? animation;
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProfileViewModel>().getProfile();
+      checkGuest();
     });
+    animationController = AnimationController(
+      vsync: this,
+      duration:
+          const Duration(milliseconds: 300), // Adjust duration for animation
+    );
+    animation = CurvedAnimation(
+      parent: animationController!,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  checkGuest() async {
+    isGuest = await LocalStorage.getBool('isGuest');
   }
 
   @override
@@ -42,7 +61,7 @@ class _ProfileViewState extends State<ProfileView> {
             )),
       ),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
         child: Consumer<ProfileViewModel>(
           builder: (context, model, child) => model.state == ViewState.loading
               ? Center(
@@ -53,7 +72,9 @@ class _ProfileViewState extends State<ProfileView> {
               : model.userModel == null
                   ? SizedBox.shrink()
                   : Column(
+                    
                       children: [
+                         isGuest == true?SizedBox(height: 50.h,):SizedBox.shrink(),
                         Container(
                           padding: EdgeInsets.all(10.sp),
                           decoration: BoxDecoration(
@@ -73,43 +94,55 @@ class _ProfileViewState extends State<ProfileView> {
                           model.userModel!.userName.toUpperCase(),
                           style: TextStyle(
                             color: UIColor.gold,
-                            fontSize: 32.sp,
+                            fontFamily: 'Familiar',
+                            fontSize: 22.sp,
                           ),
                         ),
+                         isGuest == false?
                         Text(
                           model.userModel!.mobile.toUpperCase(),
                           style: TextStyle(
                             color: UIColor.gold,
-                            fontSize: 22.sp,
+                            fontSize: 18.sp,
+                            fontFamily: 'Familiar',
                           ),
-                        ),
+                        ):SizedBox.shrink(),
+                         isGuest == false?
                         Text(
                           model.userModel!.location.toUpperCase(),
                           style: TextStyle(
                             color: UIColor.gold,
-                            fontSize: 22.sp,
+                            fontSize: 18.sp,
+                            fontFamily: 'Familiar',
                           ),
-                        ),
+                        ):SizedBox.shrink(),
+                         isGuest == false?
                         Text(
                           model.userModel!.category.toUpperCase(),
                           style: TextStyle(
                             color: UIColor.gold,
-                            fontSize: 22.sp,
+                            fontSize: 18.sp,
+                            fontFamily: 'Familiar',
                           ),
-                        ),
+                        ):SizedBox.shrink(),
+                         isGuest == false?
                         SizedBox(
                           height: 20,
-                        ),
-                        isGuest==false?
-                        CustomOutlinedBtn(
-                          borderRadius: 22.sp,
-                          borderColor: UIColor.gold,
-                          padH: 5.w,
-                          padV: 15.h,
-                          btnText: 'Change password',
-                          btnTextColor: UIColor.gold,
-                          onTapped: () {},
                         ):SizedBox.shrink(),
+                        isGuest == false
+                            ? CustomOutlinedBtn(
+                                borderRadius: 22.sp,
+                                borderColor: UIColor.gold,
+                                padH: 5.w,
+                                padV: 15.h,
+                                btnText: 'Change password',
+                                btnTextColor: UIColor.gold,
+                                onTapped: () {
+                                  navigateWithAnimationTo(
+                                      context, ChangePasswordView(), 1, 0);
+                                },
+                              )
+                            : SizedBox.shrink(),
                         SizedBox(
                           height: 20.h,
                         ),
@@ -121,19 +154,59 @@ class _ProfileViewState extends State<ProfileView> {
                           btnText: 'Logout',
                           btnTextColor: UIColor.gold,
                           onTapped: () {
-                            LocalStorage.remove(['userId','userName','location','category','mobile','isGuest']).then(
-                              (_) {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => LoginView(),
-                                  ),
-                                  (route)=> false
-                                );
-                              },
-                            );
+                            showAnimatedDialog(
+                                context,
+                                animationController!,
+                                animation!,
+                                height: 210.h,
+                                'Ready to Log Out?',
+                                'Are you sure you want to log out? You can sign back in anytime',
+                                [
+                                  Flexible(
+                                      child: CustomOutlinedBtn(
+                                    borderRadius: 12.sp,
+                                    borderColor: UIColor.gold,
+                                    btnText: 'Logout',
+                                    btnTextColor: UIColor.gold,
+                                    padH: 12.w,
+                                    padV: 12.h,
+                                    onTapped: () {
+                                      LocalStorage.remove([
+                                        'userId',
+                                        'userName',
+                                        'location',
+                                        'category',
+                                        'mobile',
+                                        'isGuest'
+                                      ]).then(
+                                        (_) {
+                                          Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    LoginView(),
+                                              ),
+                                              (route) => false);
+                                        },
+                                      );
+                                    },
+                                  )),
+                                  Spacer(),
+                                  Flexible(
+                                      child: CustomOutlinedBtn(
+                                          borderRadius: 12.sp,
+                                          btnText: 'Cancel',
+                                                                              btnTextColor: UIColor.gold,
+
+                                          borderColor: UIColor.gold,
+                                          padH: 12.w,
+                                          padV: 12.h,
+                                          onTapped: () {
+                                            Navigator.pop(context);
+                                          }))
+                                ]);
                           },
-                        )
+                        ),
                       ],
                     ),
         ),

@@ -20,6 +20,8 @@ class NoInternetView extends StatelessWidget {
               'No Internet Connection',
               style: TextStyle(
                 color: UIColor.gold,
+                                fontFamily: 'Familiar',
+
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
               ),
@@ -29,6 +31,8 @@ class NoInternetView extends StatelessWidget {
               'Please check your connection and try again',
               style: TextStyle(
                 color: UIColor.gold,
+                                fontFamily: 'Familiar',
+
                 fontSize: 16,
               ),
               textAlign: TextAlign.center,
@@ -40,6 +44,7 @@ class NoInternetView extends StatelessWidget {
               padH: 10.w,
               padV: 15.h,
               btnText: 'Retry',
+              
               fontSize: 18.sp,
               btnTextColor: UIColor.gold,
               width: 200.w,

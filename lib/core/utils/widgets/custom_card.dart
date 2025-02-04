@@ -14,42 +14,89 @@ class CustomCard extends StatelessWidget {
       {super.key,
       required this.prodImg,
       required this.title,
-      required this.price, this.subTitle, this.onTap});
+      required this.price,
+      this.subTitle,
+      this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    List<String> priceParts = price.split('.');
+
+    String integerPart = priceParts[0];
+    String decimalPart = priceParts.length > 1 ? priceParts[1] : '';
+
     return GestureDetector(
-      onTap: onTap ,
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
             border: Border.all(color: UIColor.gold),
             borderRadius: BorderRadius.circular(22.sp)),
         child: Padding(
-          padding:  EdgeInsets.all(8.sp),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                  borderRadius: BorderRadius.circular(22.sp),
-                  child: CachedNetworkImage(
-                   imageUrl: prodImg,
-                   progressIndicatorBuilder: (context, url, progress) => CategoryShimmer(width: double.infinity,height: 120.h,),
-                    fit: BoxFit.contain,
-                  )),
-                  SizedBox(height: 10.h,),
+              Center(
+                child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12.sp),
+                    child: CachedNetworkImage(
+                      imageUrl: prodImg,
+                      progressIndicatorBuilder: (context, url, progress) =>
+                          CategoryShimmer(
+                        height: 80.h,
+                        width: 80.w,
+                      ),
+                      fit: BoxFit.cover,
+                      height: 80.h,
+                      width: 80.w,
+                    )),
+              ),
+              SizedBox(
+                height: 20.h,
+              ),
               Text(
                 title,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: UIColor.secondaryGold, fontSize: 18.sp,fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: UIColor.gold,
+                    fontFamily: 'Familiar',
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.bold),
               ),
-              Text(
-                price,
-                style: TextStyle(color: UIColor.gold, fontSize: 18.sp),
+              SizedBox(
+                height: 4.h,
               ),
-               Text(
-                subTitle??"",
-                style: TextStyle(color: UIColor.gold, fontSize: 18.sp),
-              )
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: integerPart,
+                      style: TextStyle(
+                        color: UIColor.gold,
+                        fontFamily: 'Familiar',
+
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.sp, // Regular font size
+                      ),
+                    ),
+                    TextSpan(
+                      text: '.$decimalPart',
+                      style: TextStyle(
+                        fontFamily: 'Familiar',
+
+                        fontWeight: FontWeight.bold,
+                        color: UIColor.gold,
+                        fontSize:
+                            12.sp, // Smaller font size for the decimal part
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              //  Text(
+              //   subTitle??"",
+              //   style: TextStyle(color: UIColor.gold, fontSize: 18.sp),
+              // )
             ],
           ),
         ),

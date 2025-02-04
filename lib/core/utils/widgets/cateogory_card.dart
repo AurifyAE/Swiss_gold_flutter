@@ -15,14 +15,15 @@ class CategoryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap ,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-        width: 100,
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+        width: 100.w,
+       
         decoration: BoxDecoration(
             border: Border.all(color: UIColor.gold),
-            borderRadius: BorderRadius.circular(22.sp)),
+            borderRadius: BorderRadius.circular(14.sp)),
         child: Column(
           children: [
-            CachedNetworkImage(imageUrl: img,progressIndicatorBuilder: (context, url, progress) => CategoryShimmer(),),
+            CachedNetworkImage(imageUrl: img,progressIndicatorBuilder: (context, url, progress) => CategoryShimmer(width: 80,),),
             SizedBox(height: 5.h),
             Text(
               name,

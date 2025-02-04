@@ -26,13 +26,14 @@ class CustomSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            padding: EdgeInsets.symmetric(horizontal: 18.w),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   sectionTitle,
-                  style: TextStyle(color: UIColor.gold, fontSize: 22.sp),
+                  style: TextStyle(color: UIColor.gold, fontSize: 22.sp,                fontFamily: 'Familiar',
+),
                 ),
                 CustomOutlinedBtn(
                   borderRadius: 22.sp,
@@ -49,7 +50,7 @@ class CustomSection extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: 5.h),
+          SizedBox(height: 10.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: sectionData,

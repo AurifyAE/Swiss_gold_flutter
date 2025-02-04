@@ -9,10 +9,10 @@ class WishlistViewModel extends BaseModel {
   WishlistModel? _wishlistModel;
   WishlistModel? get wishlistModel => _wishlistModel;
 
-   bool? _isGuest;
+  bool? _isGuest;
   bool? get isGuest => _isGuest;
 
-  List<WishItem> _wishItemList = [];
+  final List<WishItem> _wishItemList = [];
   List<WishItem> get wishlist => _wishItemList;
 
   MessageModel? _messageModel;
@@ -23,13 +23,13 @@ class WishlistViewModel extends BaseModel {
     _wishlistModel = await WishlistService.getWishlist();
     _wishItemList.clear();
 
-   
+    if (_wishlistModel != null) {
       for (var wishItem in wishlistModel!.data) {
         for (var item in wishItem.items) {
           _wishItemList.add(item);
         }
       }
-    
+    }
 
     setState(ViewState.idle);
     notifyListeners();

@@ -1,4 +1,4 @@
-package com.example.swiss_gold
+package com.tecnavis.swissgold
 
 import io.flutter.embedding.android.FlutterActivity
 

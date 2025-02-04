@@ -61,7 +61,8 @@ class _SplashViewState extends State<SplashView> {
               ImageAssets.splashLogo,
               height: 120.h,
             ),
-            Text('Swiss Gold',style: TextStyle(color: UIColor.gold,fontSize: 18.sp),textAlign: TextAlign.center,)
+            Text('Swiss Gold',style: TextStyle(color: UIColor.gold,fontSize: 18.sp,                fontFamily: 'Familiar',
+),textAlign: TextAlign.center,)
           ],
         ),
       ),

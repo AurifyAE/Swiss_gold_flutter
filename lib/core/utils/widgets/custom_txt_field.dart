@@ -15,7 +15,8 @@ class CustomTxtField extends StatelessWidget {
     return TextField(
       cursorColor: UIColor.gold,
       controller: controller,
-      style: TextStyle(color: UIColor.gold),
+      style: TextStyle(color: UIColor.gold,                fontFamily: 'Familiar',
+),
       obscureText: isObscure ?? false,
       decoration: InputDecoration(
           labelText: label,

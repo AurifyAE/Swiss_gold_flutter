@@ -1,16 +1,15 @@
 class MarketModel {
-  final String symbol;
-  final double bid;
+  final Map<String, double> bids;
 
-  MarketModel({
-    required this.symbol,
-    required this.bid,
-  });
+  MarketModel({required this.bids});
 
-  factory MarketModel.fromJson(Map<String, dynamic> json) {
-    return MarketModel(
-      symbol: json['symbol'],
-      bid: json['bid'].toDouble(),
-    );
+  // Add/Update a bid
+  void updateBid(String symbol, double bid) {
+    bids[symbol] = bid;
+  }
+
+  // Retrieve a bid for a symbol
+  double? getBid(String symbol) {
+    return bids[symbol];
   }
 }

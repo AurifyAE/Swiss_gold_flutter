@@ -1,14 +1,8 @@
 const String baseUrl = 'https://api.aurify.ae/user';
-const String adminId = '66e994239654078fd531dc2a';
+const String adminId = '67586119baf55a80a8277f01';
 const String loginUrl = '$baseUrl/login/$adminId';
-const String newArrivalurl = '$baseUrl/new-arrival';
-const String topRatedurl = '$baseUrl/top-rated';
-const String bestSellerUrl = '$baseUrl/best-seller';
-const String categoryUrl = '$baseUrl/main-categories/$adminId';
-const String listProductFromCategoryUrl =
-    '$baseUrl/view-all?page={index}&mainCategory={cId}';
-const String listProductFromTagUrl =
-    '$baseUrl/view-all?page={index}&tags={tag}';
+const String listProductUrl =
+    '$baseUrl/view-all/?page={index}/&adminId=$adminId';
 const String getCartUrl = '$baseUrl/get-cart/{userId}';
 const String addToCartUrl = '$baseUrl/cart/$adminId/{userId}/{pId}';
 const String deleteFromCartUrl = '$baseUrl/cart/$adminId/{userId}/{pId}';
@@ -25,4 +19,11 @@ const String changePasswordUrl = '$baseUrl/forgot-password/{userId}';
 const String getServerUrl = '$baseUrl/get-server';
 const String getBannerUrl = '$baseUrl/get-banner/$adminId';
 const String commoditiesUrl = '$baseUrl/get-commodities/$adminId';
-const String companyProfileUrl = '$baseUrl//get-profile/$adminId';
+const String companyProfileUrl = '$baseUrl/get-profile/$adminId';
+const String fixPriceUrl = '$baseUrl/products/fix-prices';
+const String bookingUrl = '$baseUrl/booking/$adminId/{userId}';
+const String changePassUrl = '$baseUrl/forgot-password/$adminId';
+const String getVideoBannerUrl = '$baseUrl/get-VideoBanner/$adminId';
+const String confirmQuantityUrl = '$baseUrl/order_quantity_confirmation';
+const String getOrderHistoryUrl = '$baseUrl/fetch-order/$adminId/{userId}';
+const String getSpotRateUrl = '$baseUrl/get-spotrates/$adminId';

@@ -1,26 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-
 import 'package:http/http.dart' as http;
-import 'package:socket_io_common/src/util/event_emitter.dart';
 import 'package:swiss_gold/core/models/commodiy_model.dart';
-import 'package:swiss_gold/core/models/market_model.dart';
-import 'package:swiss_gold/core/models/prodcuts/product_model.dart';
+import 'package:swiss_gold/core/models/message.dart';
+import 'package:swiss_gold/core/models/product_model.dart';
+import 'package:swiss_gold/core/services/local_storage.dart';
 import 'package:swiss_gold/core/services/secrete_key.dart';
 import 'package:swiss_gold/core/utils/endpoint.dart';
 
 class ProductService {
   static final client = http.Client();
+  static final _marketDataStreamController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static Stream<Map<String, dynamic>> get marketDataStream =>
+      _marketDataStreamController.stream;
 
   static IO.Socket? _socket;
 
-  static Future<void> initializeSocketConnection(
-      Function(MarketModel) onDataReceived) async {
+  static Future<Map<String, dynamic>?> initializeSocketConnection() async {
     final link = await getServer();
-    log(link.toString());
+    // log('link ${link.toString()}');
     _socket = IO.io(link, {
       'transports': ['websocket'],
       'autoConnect': false,
@@ -28,7 +29,7 @@ class ProductService {
         'secret': 'aurify@123',
       },
     });
-    print('Connecting to WebSocket: $link');
+    // print('Connecting to WebSocket: $link');
 
     // Debugging connection lifecycle events
     _socket?.on('connect', (_) async {
@@ -36,19 +37,19 @@ class ProductService {
 
       requestMarketData(commodityArray);
 
-      print('Connected to WebSocket!');
+      // print('Connected to WebSocket!');
     });
 
     _socket?.on('connect_error', (error) {
-      print('Connection failed: $error');
+      // print('Connection failed: $error');
     });
 
     _socket?.on('connect_timeout', (_) {
-      print('Connection timeout!');
+      // print('Connection timeout!');
     });
 
     _socket?.on('disconnect', (_) {
-      print('Disconnected from WebSocket');
+      // print('Disconnected from WebSocket');
     });
 
     // Handle incoming messages
@@ -56,43 +57,21 @@ class ProductService {
       // print('Received market-data event: $data');
 
       if (data is Map<String, dynamic>) {
-        final marketData = await handleMarketData(data);
-        // log('from websocket ${marketData.symbol}');
-        // log('symbol is ${marketData!.symbol} ${marketData.bid}');
-        onDataReceived(marketData!);
-        // print('Parsed market-data: ${data['symbol']}');
-      } else {
-        print('Invalid market-data format received');
+        // log(data.toString());
+        _marketDataStreamController.add(data);
+        // Map<String, dynamic> marketData = data;
+        // log(marketData['bid'].toString());
       }
     });
 
     // Other events (optional)
     _socket?.on('error', (error) {
-      print('Received error event: $error');
+      // print('Received error event: $error');
     });
 
     // Start the connection
-    await _socket?.connect();
-  }
-
-  static Future<MarketModel?> handleMarketData(
-      Map<String, dynamic>? data) async {
-    try {
-      // Parse the incoming data with the simplified model
-      MarketModel marketData = MarketModel.fromJson(data!);
-
-      // Handle the market data based on the symbol
-      // print("Received data for ${marketData.symbol}:");
-      // print("Bid: ${marketData.bid}");
-
-      // log(marketData.toString());
-
-      return MarketModel.fromJson(data);
-
-      // You can add additional logic here based on symbol if needed
-    } catch (e) {
-      return null;
-    }
+    _socket?.connect();
+    return null;
   }
 
   static Future<List<String>> fetchCommodityArray() async {
@@ -115,41 +94,7 @@ class ProductService {
   }
 
   static void requestMarketData(List<String> symbols) {
-    // print("HERE IS THE SYMBOLS");
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
-    // print(symbols);
     _socket?.emit('request-data', [symbols]);
-  }
-
-  static Future<ProductModel?> showTopRated() async {
-    try {
-      var response = await client.get(
-        Uri.parse(topRatedurl),
-        headers: {
-          'X-Secret-Key': secreteKey,
-          'Content-Type': 'application/json'
-        }, // Encoding payload to JSON
-      );
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = jsonDecode(response.body);
-
-        return ProductModel.fromJson(responseData);
-      } else {
-        return null;
-      }
-    } catch (e) {
-      return null;
-    }
   }
 
   static Future<List<String>> getBanner() async {
@@ -173,7 +118,7 @@ class ProductService {
         return [];
       }
     } catch (e) {
-      log(e.toString());
+      // log(e.toString());
       return [];
     }
   }
@@ -196,14 +141,15 @@ class ProductService {
         return null;
       }
     } catch (e) {
+      // print(e.toString());
       return null;
     }
   }
 
-  static Future<ProductModel?> showNewArrival() async {
+  static Future<double?> getSpotRate() async {
     try {
       var response = await client.get(
-        Uri.parse(newArrivalurl),
+        Uri.parse(getSpotRateUrl),
         headers: {
           'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'
@@ -213,70 +159,24 @@ class ProductService {
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = jsonDecode(response.body);
 
-        return ProductModel.fromJson(responseData);
+       num goldSpotRate = responseData['info']['goldBidSpread'];
+        // log(goldSpotRate.toString());
+        // log(response.body);
+        return goldSpotRate.toDouble();
       } else {
+        // log(response.body);
         return null;
       }
     } catch (e) {
+      // print(e.toString());
       return null;
     }
   }
 
-  static Future<ProductModel?> showBestSeller() async {
-    try {
-      var response = await client.get(
-        Uri.parse(bestSellerUrl),
-        headers: {
-          'X-Secret-Key': secreteKey,
-          'Content-Type': 'application/json'
-        },
-      );
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = jsonDecode(response.body);
-
-        return ProductModel.fromJson(responseData);
-      } else {
-        return null;
-      }
-    } catch (e) {
-      return null;
-    }
-  }
-
-  static Future<ProductModel?> listProductsFromCategory(
+  static Future<ProductModel?> listProducts(
       Map<String, dynamic> payload) async {
     try {
-      final url = listProductFromCategoryUrl
-          .replaceFirst('{index}', payload['index'])
-          .replaceFirst('{cId}', payload['cId']);
-      log(url.toString());
-      var response = await client.get(
-        Uri.parse(url),
-        headers: {
-          'X-Secret-Key': secreteKey,
-          'Content-Type': 'application/json'
-        },
-      );
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = jsonDecode(response.body);
-
-        return ProductModel.fromJson(responseData);
-      } else {
-        return null;
-      }
-    } catch (e) {
-      return null;
-    }
-  }
-
-  static Future<ProductModel?> listProductsFromTag(
-      Map<String, dynamic> payload) async {
-    try {
-      final url = listProductFromTagUrl
-          .replaceFirst('{index}', payload['index'])
-          .replaceFirst('{tag}', payload['tag']);
+      final url = listProductUrl.replaceFirst('{index}', payload['index']);
       var response = await client.get(
         Uri.parse(url),
         headers: {
@@ -291,10 +191,63 @@ class ProductService {
 
         return ProductModel.fromJson(responseData);
       } else {
+        // Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        // log(responseData.toString());
+
         return null;
       }
     } catch (e) {
-      log(e.toString());
+      // log(e.toString());
+      return null;
+    }
+  }
+
+  static Future<MessageModel?> fixPrice(Map<String, dynamic> payload) async {
+    try {
+      var response = await client.put(Uri.parse(fixPriceUrl),
+          headers: {
+            'X-Secret-Key': secreteKey,
+            'Content-Type': 'application/json'
+          }, // Encoding payload to JSON
+          body: jsonEncode(payload));
+
+      // log(payload.toString());
+
+      if (response.statusCode == 200) {
+        return MessageModel.fromJson({'success': true});
+      } else {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        // log(responseData.toString());
+        return MessageModel.fromJson(responseData);
+      }
+    } catch (e) {
+      // log(e.toString());
+      return null;
+    }
+  }
+
+  static Future<MessageModel?> bookProducts(
+      Map<String, dynamic> payload) async {
+    try {
+      final id = await LocalStorage.getString('userId');
+
+      final url = bookingUrl.replaceFirst('{userId}', id.toString());
+      var response = await client.post(Uri.parse(url),
+          headers: {
+            'X-Secret-Key': secreteKey,
+            'Content-Type': 'application/json'
+          },
+          body: jsonEncode(payload));
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        return MessageModel.fromJson(responseData);
+      } else {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        return MessageModel.fromJson(responseData);
+      }
+    } catch (e) {
       return null;
     }
   }

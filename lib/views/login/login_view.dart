@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:swiss_gold/core/services/fcm_service.dart';
 import 'package:swiss_gold/core/services/local_storage.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
@@ -32,11 +35,19 @@ class _LoginViewState extends State<LoginView> {
             children: [
               Text(
                 'Hello Again!',
-                style: TextStyle(color: UIColor.gold, fontSize: 32.sp),
+                style: TextStyle(
+                  color: UIColor.gold,
+                  fontSize: 28.sp,
+                  fontFamily: 'Familiar',
+                ),
               ),
               Text(
                 'Welcome back , You have been missed.',
-                style: TextStyle(color: UIColor.gold, fontSize: 14.sp),
+                style: TextStyle(
+                  color: UIColor.gold,
+                  fontSize: 14.sp,
+                  fontFamily: 'Familiar',
+                ),
               ),
               SizedBox(
                 height: 48.h,
@@ -63,20 +74,31 @@ class _LoginViewState extends State<LoginView> {
               ),
               SizedBox(height: 30.h),
               GestureDetector(
-                onTap: () {
+                onTap: () async {
                   if (mobileController.text.isEmpty ||
                       passController.text.isEmpty) {
                     customSnackBar(
                         context: context, title: 'Email or password is empty');
                   } else {
+                    final token = await FcmService.getToken();
+                    log(token.toString());
+
                     Provider.of<AuthViewModel>(context, listen: false).login(
                       {
                         "contact": int.parse(mobileController.text),
-                        "password": passController.text
+                        "password": passController.text,
+                        'token': token
                       },
-                    ).then((response) {
+                    ).then((response) async {
                       if (response!.success) {
                         LocalStorage.setBool('isGuest', false);
+                        FcmService.requestPermission();
+                        customSnackBar(
+                            context: context,
+                            title: response.message,
+                            bgColor: UIColor.gold,
+                            width: 130.w);
+
                         Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
@@ -92,14 +114,18 @@ class _LoginViewState extends State<LoginView> {
                 child: Container(
                   width: double.infinity,
                   padding:
-                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                   decoration: BoxDecoration(
                       color: UIColor.gold,
                       borderRadius: BorderRadius.circular(22.sp)),
                   child: Text(
                     'Login',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: UIColor.black, fontSize: 22.sp),
+                    style: TextStyle(
+                      color: UIColor.black,
+                      fontSize: 18.sp,
+                      fontFamily: 'Familiar',
+                    ),
                   ),
                 ),
               ),
@@ -110,10 +136,10 @@ class _LoginViewState extends State<LoginView> {
                 borderRadius: 22.sp,
                 borderColor: UIColor.gold,
                 padH: 12.w,
-                padV: 10.h,
+                padV: 12.h,
                 btnText: 'Continue as guest',
                 btnTextColor: UIColor.gold,
-                fontSize: 22.sp,
+                fontSize: 18.sp,
                 onTapped: () {
                   LocalStorage.setBool('isGuest', true).then((_) {
                     LocalStorage.setString({'userName': 'Guest'});

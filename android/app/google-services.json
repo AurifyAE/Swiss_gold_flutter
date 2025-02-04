@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "329227476273",
+    "project_id": "pushnotifaction-11aab",
+    "storage_bucket": "pushnotifaction-11aab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:329227476273:android:b674d95426fd35a1eee410",
+        "android_client_info": {
+          "package_name": "com.tecnavis.swissgold"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxqLz38mV2VN3IR6YeF9DQS_ZUyDdA0qc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

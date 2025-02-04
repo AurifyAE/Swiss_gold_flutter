@@ -17,15 +17,30 @@ class CartViewModel extends BaseModel {
   ViewState? _quantityState;
   ViewState? get quantityState => _quantityState;
 
-  List<CartItem> _cartItemList = [];
+  final List<CartItem> _cartItemList = [];
   List<CartItem> get cartList => _cartItemList;
 
   MessageModel? _messageModel;
   MessageModel? get messageModel => _messageModel;
 
   Future<void> getCart() async {
-    
     setState(ViewState.loading);
+    _cartModel = await CartService.getCart();
+    _cartItemList.clear();
+
+    if (_cartModel != null) {
+      for (var cartItem in cartModel!.data) {
+        for (var item in cartItem.items) {
+          _cartItemList.add(item);
+        }
+      }
+    }
+
+    setState(ViewState.idle);
+    notifyListeners();
+  }
+
+  Future<void> updatePrice() async {
     _cartModel = await CartService.getCart();
     _cartItemList.clear();
 
@@ -35,7 +50,6 @@ class CartViewModel extends BaseModel {
       }
     }
 
-    setState(ViewState.idle);
     notifyListeners();
   }
 
@@ -44,10 +58,12 @@ class CartViewModel extends BaseModel {
     notifyListeners();
   }
 
+  Future<void> confirmQuantity(bool action) async {
+    CartService.confirmQuantity({'action': action});
+  }
+
   Future<MessageModel?> deleteFromCart(Map<String, dynamic> payload) async {
-    setState(ViewState.loading);
     _messageModel = await CartService.deleteFromCart(payload);
-    setState(ViewState.idle);
     notifyListeners();
     return _messageModel;
   }

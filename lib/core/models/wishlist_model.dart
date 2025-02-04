@@ -3,13 +3,16 @@ class WishlistModel {
   final String message;
   final List<WishlistInfo> data;
 
-  WishlistModel({required this.success, required this.message, required this.data});
+  WishlistModel(
+      {required this.success, required this.message, required this.data});
 
   factory WishlistModel.fromJson(Map<String, dynamic> json) {
     return WishlistModel(
       success: json['success'],
       message: json['message'],
-      data: (json['info'] as List).map((data) => WishlistInfo.fromJson(data)).toList(),
+      data: (json['info'] as List)
+          .map((data) => WishlistInfo.fromJson(data))
+          .toList(),
     );
   }
 }
@@ -58,12 +61,13 @@ class ProductDetails {
   final String title;
   final String description;
   final List<String> images;
-  final int price;
-  final int purity;
+  final num price;
+  final num purity;
+  final num makingCharge;
   final String sku;
   final String type;
   final String tags;
-  final int weight;
+  final num weight;
   final String subCategory;
   final String mainCategory;
 
@@ -75,6 +79,7 @@ class ProductDetails {
     required this.purity,
     required this.sku,
     required this.type,
+    required this.makingCharge,
     required this.tags,
     required this.weight,
     required this.subCategory,
@@ -88,6 +93,7 @@ class ProductDetails {
       images: List<String>.from(json['images']),
       price: json['price'],
       purity: json['purity'],
+      makingCharge: json['makingCharge'],
       sku: json['sku'],
       type: json['type'],
       tags: json['tags'],

@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:swiss_gold/core/models/message.dart';
 import 'package:swiss_gold/core/models/user_model.dart';
 import 'package:swiss_gold/core/services/auth_service.dart';
-import 'package:swiss_gold/core/services/local_storage.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/view_models/base_model.dart';
 

@@ -1,19 +1,15 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:swiss_gold/core/services/local_storage.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/image_assets.dart';
-import 'package:swiss_gold/core/utils/navigate.dart';
 import 'package:swiss_gold/views/bottom_nav/no_internet_view.dart';
 import 'package:swiss_gold/views/cart/cart_view.dart';
 import 'package:swiss_gold/views/support/contact_view.dart';
 import 'package:swiss_gold/views/home/home_view.dart';
 import 'package:swiss_gold/views/more/more_view.dart';
-import 'package:swiss_gold/views/wishlist/wishlist_view.dart';
 import 'package:http/http.dart' as http;
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
@@ -36,7 +32,7 @@ class _BottomNavState extends State<BottomNav> {
   }
 
   void checkConnection() async {
-    // Listen to status changes
+    
     internetStreamSubscription =
         InternetConnection().onStatusChange.listen((InternetStatus status) {
       print(status);
@@ -108,26 +104,9 @@ class _BottomNavState extends State<BottomNav> {
 
   @override
   Widget build(BuildContext context) {
-  
-
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size(double.infinity, 70.h),
-        child: Padding(
-          padding: EdgeInsets.only(top: 8.h, left: 5.w, right: 5.w),
-          child: Row(
-            
-            children: [
-              Image.asset(ImageAssets.mainLogo, width: 80.w),
-              SizedBox(width: 70.w,),
-              Text(
-                'Swiss Gold',
-                style: TextStyle(color: UIColor.gold, fontSize: 20.sp),
-              ),
-               
-            ],
-          ),
-        ),
+      appBar: AppBar(
+        title:   Image.asset(ImageAssets.mainLogo, width: 100.w),
       ),
       body: isConnected
           ? AnimatedSwitcher(
@@ -140,15 +119,15 @@ class _BottomNavState extends State<BottomNav> {
             )
           : NoInternetView(onRetry: () {
               _retryConnection();
-              // LocalStorage.remove([
-              //   'userId',
-              //   'userName',
-              //   'location',
-              //   'mobile',
-              //   'category',
-              // ]);
+             
             }),
       bottomNavigationBar: BottomNavigationBar(
+        selectedLabelStyle: TextStyle(
+          fontFamily: 'Familiar',
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: 'Familiar',
+        ),
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
@@ -157,19 +136,20 @@ class _BottomNavState extends State<BottomNav> {
         items: [
           BottomNavigationBarItem(
               icon: Icon(
-                PhosphorIcons.house(),
+                PhosphorIcons.shoppingBagOpen(),
                 size: 32.sp,
               ),
-              label: 'Home'),
+              label: 'Shop'),
           BottomNavigationBarItem(
-              icon: Icon(PhosphorIcons.storefront(), size: 32.sp),
-              label: 'Cart'),
+            icon: Icon(PhosphorIcons.shoppingCart(), size: 32.sp),
+            label: 'Cart',
+          ),
           BottomNavigationBarItem(
               icon: Icon(
-                PhosphorIcons.headphones(),
+                PhosphorIcons.headset(),
                 size: 32.sp,
               ),
-              label: 'Support'),
+              label: 'Contact'),
           BottomNavigationBarItem(
               icon: Icon(
                 PhosphorIcons.gearSix(),

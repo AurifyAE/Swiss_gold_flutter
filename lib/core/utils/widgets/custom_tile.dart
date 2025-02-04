@@ -22,11 +22,13 @@ class CustomTile extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(color: UIColor.gold, fontSize: 18.sp),
+            style: TextStyle(color: UIColor.gold,                fontFamily: 'Familiar',
+ fontSize: 18.sp),
           ),
           Text(
             data,
-            style: TextStyle(color: UIColor.gold, fontSize: 18.sp),
+            style: TextStyle(color: UIColor.gold,                fontFamily: 'Familiar',
+ fontSize: 18.sp),
           ),
         ],
       ),

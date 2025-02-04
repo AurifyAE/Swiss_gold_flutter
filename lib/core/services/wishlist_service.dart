@@ -25,15 +25,15 @@ class WishlistService {
 
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = jsonDecode(response.body);
-        log(responseData.toString());
+        // log(responseData.toString());
         return WishlistModel.fromJson(responseData);
       } else {
-        Map<String, dynamic> responseData = jsonDecode(response.body);
-        log(responseData.toString());
+        // Map<String, dynamic> responseData = jsonDecode(response.body);
+        // log(responseData.toString());
         return null;
       }
     } catch (e) {
-      log(e.toString());
+      // log(e.toString());
       return null;
     }
   }
