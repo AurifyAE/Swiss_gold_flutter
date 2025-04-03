@@ -35,7 +35,36 @@ class CartService {
         return null;
       }
     } catch (e) {
-      log(e.toString());
+      return null;
+    }
+  }
+
+  static Future<MessageModel?> updateQuantityFromHome(
+      String pId, Map<String, dynamic> payload) async {
+    try {
+      final id = await LocalStorage.getString('userId');
+      log(payload.toString());
+      log(id.toString());
+
+      final url = updateQuantityFromHomeUrl
+          .replaceFirst('{userId}', id.toString())
+          .replaceFirst('{pId}', pId);
+      log(url);
+      var response = await client.put(Uri.parse(url),
+          headers: {
+            'X-Secret-Key': secreteKey,
+            'Content-Type': 'application/json'
+          }, // Encoding payload to JSON
+          body: jsonEncode(payload));
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        return MessageModel.fromJson(responseData);
+      } else {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        return MessageModel.fromJson(responseData);
+      }
+    } catch (e) {
       return null;
     }
   }
@@ -56,9 +85,11 @@ class CartService {
 
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = jsonDecode(response.body);
+        log(response.body);
         return MessageModel.fromJson(responseData);
       } else {
         Map<String, dynamic> responseData = jsonDecode(response.body);
+        log(response.body);
         return MessageModel.fromJson(responseData);
       }
     } catch (e) {
@@ -69,7 +100,6 @@ class CartService {
 
   static Future<void> confirmQuantity(Map<String, dynamic> payload) async {
     try {
-      log('payload ${payload.toString()}');
       var response = await client.post(Uri.parse(confirmQuantityUrl),
           headers: {
             'X-Secret-Key': secreteKey,
@@ -78,12 +108,12 @@ class CartService {
           body: jsonEncode(payload));
 
       if (response.statusCode == 200) {
-        log(response.body);
+        // log(response.body);
       } else {
-        log(response.body);
+        // log(response.body);
       }
     } catch (e) {
-      log(e.toString());
+      // log(e.toString());
     }
   }
 
@@ -153,6 +183,7 @@ class CartService {
       final url = deleteFromCartUrl
           .replaceFirst('{userId}', id.toString())
           .replaceFirst('{pId}', payload['pId']);
+
       var response = await client.delete(Uri.parse(url),
           headers: {
             'X-Secret-Key': secreteKey,

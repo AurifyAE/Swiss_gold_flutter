@@ -1,12 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/image_assets.dart';
 import 'package:swiss_gold/views/bottom_nav/no_internet_view.dart';
 import 'package:swiss_gold/views/cart/cart_view.dart';
+import 'package:swiss_gold/views/order_history/order_history.dart';
 import 'package:swiss_gold/views/support/contact_view.dart';
 import 'package:swiss_gold/views/home/home_view.dart';
 import 'package:swiss_gold/views/more/more_view.dart';
@@ -32,7 +31,6 @@ class _BottomNavState extends State<BottomNav> {
   }
 
   void checkConnection() async {
-    
     internetStreamSubscription =
         InternetConnection().onStatusChange.listen((InternetStatus status) {
       print(status);
@@ -93,7 +91,7 @@ class _BottomNavState extends State<BottomNav> {
     }
   }
 
-  List screens = [HomeView(), CartView(), ContactView(), MoreView()];
+  List screens = [HomeView(),OrderHistory(), ContactView(), MoreView()];
 
   @override
   void initState() {
@@ -106,7 +104,12 @@ class _BottomNavState extends State<BottomNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:   Image.asset(ImageAssets.mainLogo, width: 100.w),
+      
+        toolbarHeight: 120.h,
+        title: Image.asset(
+          ImageAssets.mainLogo,
+          width: 250.w,
+        ),
       ),
       body: isConnected
           ? AnimatedSwitcher(
@@ -119,7 +122,6 @@ class _BottomNavState extends State<BottomNav> {
             )
           : NoInternetView(onRetry: () {
               _retryConnection();
-             
             }),
       bottomNavigationBar: BottomNavigationBar(
         selectedLabelStyle: TextStyle(
@@ -139,17 +141,21 @@ class _BottomNavState extends State<BottomNav> {
                 PhosphorIcons.shoppingBagOpen(),
                 size: 32.sp,
               ),
-              label: 'Shop'),
-          BottomNavigationBarItem(
-            icon: Icon(PhosphorIcons.shoppingCart(), size: 32.sp),
-            label: 'Cart',
+              label: 'Shop'
           ),
+           BottomNavigationBarItem(
+              icon: Icon(
+               PhosphorIcons.article(),
+                size: 32.sp,
+              ),
+              label: 'Orders'),
           BottomNavigationBarItem(
               icon: Icon(
                 PhosphorIcons.headset(),
                 size: 32.sp,
               ),
               label: 'Contact'),
+             
           BottomNavigationBarItem(
               icon: Icon(
                 PhosphorIcons.gearSix(),

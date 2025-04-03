@@ -37,10 +37,9 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
- context.read<ProductViewModel>().getSpotRate();
+    context.read<ProductViewModel>().getSpotRate();
     ProductService.marketDataStream.listen((marketData) {
       String symbol = marketData['symbol'].toString().toLowerCase();
-      
 
       if (mounted) {
         // Check if the widget is still mounted
@@ -96,19 +95,20 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                     color: UIColor.black,
                     child: Column(
                       children: [
-                        SizedBox(height: 20.h,),
-                        
-                             Text(
-                              'Select delivery date ',
-                              style: TextStyle(
-                                  color: UIColor.gold,
-                                  fontFamily: 'Familiar',
-                                  fontSize: 17.sp,
-                                  fontWeight: FontWeight.normal),
-                            ),
-                            SizedBox(height: 50.h,),
-                        
-                      
+                        SizedBox(
+                          height: 20.h,
+                        ),
+                        Text(
+                          'Select delivery date ',
+                          style: TextStyle(
+                              color: UIColor.gold,
+                              fontFamily: 'Familiar',
+                              fontSize: 17.sp,
+                              fontWeight: FontWeight.normal),
+                        ),
+                        SizedBox(
+                          height: 50.h,
+                        ),
                         CalendarDatePicker(
                             initialDate: DateTime.now(),
                             firstDate: DateTime.now(),
@@ -119,10 +119,10 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                               });
                             }),
                         Padding(
-                          padding:  EdgeInsets.symmetric(horizontal: 22.w),
+                          padding: EdgeInsets.symmetric(horizontal: 22.w),
                           child: Row(
                             children: [
-                               Text(
+                              Text(
                                 'Selected date : ',
                                 style: TextStyle(
                                     color: UIColor.gold,
@@ -161,15 +161,17 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                                         context.read<CartViewModel>();
                                     final model =
                                         context.read<ProductViewModel>();
-                
+
                                     List<Map<String, dynamic>> bookingData = [];
-                
+
                                     for (var item in cartModel.cartList) {
                                       // Calculate price based on product type
                                       if (item.productDetails.type
                                               .toLowerCase() ==
                                           'gold') {
-                                        goldPrice = (((goldBid+model.goldSpotRate!) / 31.103) *
+                                        goldPrice = (((goldBid +
+                                                        model.goldSpotRate!) /
+                                                    31.103) *
                                                 3.674 *
                                                 item.productDetails.weight *
                                                 item.productDetails.purity /
@@ -180,18 +182,18 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                                                         .length) +
                                             item.productDetails.makingCharge);
                                       }
-                
+
                                       // Add data to bookingData
                                       bookingData.add({
                                         "productId": item.productId,
                                         "fixedPrice": goldPrice
                                       });
                                     }
-                
+
                                     Map<String, dynamic> finalPayload = {
                                       "bookingData": bookingData,
                                     };
-                
+
                                     model
                                         .fixPrice(finalPayload)
                                         .then((response) {
@@ -256,8 +258,6 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                             ],
                           ),
                         ),
-                        
-                
                       ],
                     ),
                   ),
@@ -308,11 +308,16 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
             if (model.cartModel == null || model.cartList.isEmpty) {
               return SizedBox.shrink();
             } else {
+              
               totalPrice = 0;
 
               for (var cartItem in model.cartList) {
                 if (cartItem.productDetails.type.toLowerCase() == 'gold') {
-                  goldPrice = ((((goldBid+context.read<ProductViewModel>().goldSpotRate!) / 31.103) *
+                  goldPrice = ((((goldBid +
+                                      context
+                                          .read<ProductViewModel>()
+                                          .goldSpotRate!) /
+                                  31.103) *
                               3.674 *
                               cartItem.productDetails.weight *
                               cartItem.productDetails.purity /
@@ -328,75 +333,57 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                 totalPrice += goldPrice;
               }
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total AED ${totalPrice.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      color: UIColor.gold,
-                      fontFamily: 'Familiar',
-                      fontSize: 19.sp,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      showAnimatedDialog(
-                          context,
-                          animationController!,
-                          animation!,
-                          'Choose Your Payment Option',
-                          'You can either pay using cash or opt for gold as your preferred payment method. Select an option to proceed',
-                          [
-                            Flexible(
-                                child: CustomOutlinedBtn(
-                              borderRadius: 12.sp,
-                              borderColor: UIColor.gold,
-                              padH: 12.w,
-                              padV: 12.h,
-                              onTapped: () {
-                                selectedValue = 'Gold';
-                                Navigator.pop(context);
-
-                                selectDate();
-                              },
-                              btnTextColor: UIColor.gold,
-                              btnText: 'Gold',
-                            )),
-                            Spacer(),
-                            Flexible(
-                                child: CustomOutlinedBtn(
-                              borderRadius: 12.sp,
-                              borderColor: UIColor.gold,
-                              padH: 12.w,
-                              padV: 12.h,
-                              btnTextColor: UIColor.gold,
-                              onTapped: () {
-                                selectedValue = 'Cash';
-                                Navigator.pop(context);
-                                selectDate();
-                              },
-                              btnText: 'Cash',
-                            )),
-                          ]);
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 10.w, vertical: 10.h),
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: UIColor.gold)),
-                      child: Text(
-                        'Order now',
-                        style: TextStyle(
-                          color: UIColor.gold,
-                          fontFamily: 'Familiar',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              return CustomOutlinedBtn(
+                borderRadius: 12.sp,
+                borderColor: UIColor.gold,
+                
+                padH: 12.w,
+                padV: 12.h,
+                btnTextColor: UIColor.gold,
+                onTapped: () {
+                 showAnimatedDialog(
+                      context,
+                      animationController!,
+                      animation!,
+                      'Choose Your Payment Option',
+                      'You can either pay using cash or opt for gold as your preferred payment method. Select an option to proceed',
+                      [
+                        Flexible(
+                            child: CustomOutlinedBtn(
+                          borderRadius: 12.sp,
+                          borderColor: UIColor.gold,
+                          padH: 12.w,
+                          padV: 12.h,
+                          onTapped: () {
+                            selectedValue = 'Gold';
+                            Navigator.pop(context);
+              
+                            selectDate();
+                          },
+                          btnTextColor: UIColor.gold,
+                          btnText: 'Gold',
+                        )),
+                        Spacer(),
+                        Flexible(
+                            child: CustomOutlinedBtn(
+                          borderRadius: 12.sp,
+                          borderColor: UIColor.gold,
+                          padH: 12.w,
+                          padV: 12.h,
+                          btnTextColor: UIColor.gold,
+                          onTapped: () {
+                            selectedValue = 'Cash';
+                            Navigator.pop(context);
+                            selectDate();
+                          },
+                          btnText: 'Cash',
+                        )),
+                      ]);
+                },
+                btnText: 'Order now',
               );
+
+             
             }
           },
         ),
@@ -453,7 +440,11 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                 itemBuilder: (context, index) {
                   return Consumer<CartViewModel>(
                       builder: (context, model, child) {
-                    goldPrice = ((((goldBid +  context.read<ProductViewModel>().goldSpotRate! )/ 31.103) *
+                    goldPrice = ((((goldBid +
+                                        context
+                                            .read<ProductViewModel>()
+                                            .goldSpotRate!) /
+                                    31.103) *
                                 3.674 *
                                 model.cartList[index].productDetails.weight *
                                 model.cartList[index].productDetails.purity /
@@ -503,7 +494,7 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                         onDecrementTapped: () {
                           model.decrementQuantity(
                               {'pId': model.cartList[index].productId},
-                              index).then((_) {
+                            index:  index).then((_) {
                             model.updatePrice();
                           });
                           selectedProdIndex = index;
@@ -513,7 +504,7 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
 
                           model.incrementQuantity(
                               {'pId': model.cartList[index].productId},
-                              index).then((_) {
+                            index:  index).then((_) {
                             model.updatePrice();
                           });
                         },

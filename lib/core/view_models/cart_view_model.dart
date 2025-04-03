@@ -4,6 +4,7 @@ import 'package:swiss_gold/core/models/cart_model.dart';
 import 'package:swiss_gold/core/models/message.dart';
 import 'package:swiss_gold/core/services/cart_service.dart';
 import 'package:swiss_gold/core/services/local_storage.dart';
+import 'package:swiss_gold/core/services/product_service.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/view_models/base_model.dart';
 
@@ -53,6 +54,18 @@ class CartViewModel extends BaseModel {
     notifyListeners();
   }
 
+  Future<MessageModel?> updateQuantityFromHome(String pId,
+      Map<String, dynamic> payload) async {
+    log('payload from view model $payload');
+    setState(ViewState.loading);
+    _messageModel = await CartService.updateQuantityFromHome(pId,payload);
+
+    setState(ViewState.idle);
+    notifyListeners();
+
+    return _messageModel;
+  }
+
   Future<void> checkGuestMode() async {
     _isGuest = await LocalStorage.getBool('isGuest');
     notifyListeners();
@@ -76,11 +89,11 @@ class CartViewModel extends BaseModel {
     return _messageModel;
   }
 
-  Future<void> incrementQuantity(Map<String, dynamic> payload, index) async {
+  Future<void> incrementQuantity(Map<String, dynamic> payload, {index}) async {
     _quantityState = ViewState.loading;
     notifyListeners();
     _messageModel = await CartService.incrementQuantity(payload);
-    if (_messageModel!.success == true) {
+    if (_messageModel!.success == true && index!=null) {
       _cartItemList[index].quantity = _cartItemList[index].quantity + 1;
     }
 
@@ -89,7 +102,7 @@ class CartViewModel extends BaseModel {
   }
 
   Future<MessageModel?> decrementQuantity(
-      Map<String, dynamic> payload, index) async {
+      Map<String, dynamic> payload, {index}) async {
     _quantityState = ViewState.loading;
     notifyListeners();
     _messageModel = await CartService.decrementQuantity(payload);

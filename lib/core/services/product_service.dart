@@ -21,7 +21,6 @@ class ProductService {
 
   static Future<Map<String, dynamic>?> initializeSocketConnection() async {
     final link = await getServer();
-    // log('link ${link.toString()}');
     _socket = IO.io(link, {
       'transports': ['websocket'],
       'autoConnect': false,
@@ -128,7 +127,7 @@ class ProductService {
       var response = await client.get(
         Uri.parse(getServerUrl),
         headers: {
-          'X-Secret-Key': secreteKey,
+          'X-Secret-Key': 'IfiuH/ko+rh/gekRvY4Va0s+=uucP3xwIfo0e8YTN1INF',
           'Content-Type': 'application/json'
         }, // Encoding payload to JSON
       );

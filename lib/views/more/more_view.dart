@@ -6,7 +6,7 @@ import 'package:swiss_gold/core/utils/navigate.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 import 'package:swiss_gold/views/order_history/order_history.dart';
 import 'package:swiss_gold/views/profile/profile_view.dart';
-import 'package:swiss_gold/views/wishlist/wishlist_view.dart';
+import 'package:swiss_gold/views/transaction/transaction_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
@@ -47,25 +47,25 @@ class MoreView extends StatelessWidget {
               navigateTo(context, ProfileView());
             },
           ),
-          SizedBox(
-            height: 20.h,
-          ),
-          CustomOutlinedBtn(
-            borderRadius: 12.sp,
-            borderColor: UIColor.gold,
-            padH: 20.w,
-            padV: 20.h,
-            btnIcon: PhosphorIcons.heart(),
-            iconColor: UIColor.gold,
-            btnText: 'Wishlist',
-            btnTextColor: UIColor.gold,
-            suffixIcon: Icons.arrow_forward_ios,
-            fontSize: 17.sp,
-            align: MainAxisAlignment.start,
-            onTapped: () {
-              navigateTo(context, WishlistView());
-            },
-          ),
+          // SizedBox(
+          //   height: 20.h,
+          // ),
+          // CustomOutlinedBtn(
+          //   borderRadius: 12.sp,
+          //   borderColor: UIColor.gold,
+          //   padH: 20.w,
+          //   padV: 20.h,
+          //   btnIcon: PhosphorIcons.heart(),
+          //   iconColor: UIColor.gold,
+          //   btnText: 'Wishlist',
+          //   btnTextColor: UIColor.gold,
+          //   suffixIcon: Icons.arrow_forward_ios,
+          //   fontSize: 17.sp,
+          //   align: MainAxisAlignment.start,
+          //   onTapped: () {
+          //     navigateTo(context, WishlistView());
+          //   },
+          // ),
           SizedBox(
             height: 20.h,
           ),
@@ -76,13 +76,13 @@ class MoreView extends StatelessWidget {
             padV: 20.h,
             btnIcon: PhosphorIcons.article(),
             iconColor: UIColor.gold,
-            btnText: 'Order history',
+            btnText: 'Payment history',
             btnTextColor: UIColor.gold,
             suffixIcon: Icons.arrow_forward_ios,
             fontSize: 17.sp,
             align: MainAxisAlignment.start,
             onTapped: () {
-              navigateTo(context, OrderHistory());
+              navigateTo(context, TransactionHistoryView());
             },
           ),
           SizedBox(

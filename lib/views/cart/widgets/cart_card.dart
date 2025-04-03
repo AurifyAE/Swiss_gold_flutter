@@ -58,22 +58,22 @@ class CartCard extends StatelessWidget {
                 '${prodTitle.toString().length > 12 ? prodTitle.toString().substring(0, 12) : prodTitle}..',
                 
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: UIColor.gold, fontSize: 16.sp,),
+                style: TextStyle(color: UIColor.gold, fontSize: 19.sp,),
               ),
-               SizedBox(
-                height: 5.h,
-              ),
-              Text(
-                type,
-                style: TextStyle(color: UIColor.gold, fontSize: 16.sp),
-              ),
-               SizedBox(
-                height: 5.h,
-              ),
-              Text(
-                price,
-                style: TextStyle(color: UIColor.gold, fontSize: 16.sp),
-              ),
+              //  SizedBox(
+              //   height: 5.h,
+              // ),
+              // Text(
+              //   type,
+              //   style: TextStyle(color: UIColor.gold, fontSize: 16.sp),
+              // ),
+              //  SizedBox(
+              //   height: 5.h,
+              // ),
+              // Text(
+              //   price,
+              //   style: TextStyle(color: UIColor.gold, fontSize: 16.sp),
+              // ),
               SizedBox(
                 height: 5.h,
               ),
@@ -81,7 +81,7 @@ class CartCard extends StatelessWidget {
                 children: [
                  GestureDetector(
                     onTap: onDecrementTapped,
-                    child: Icon(Icons.remove, color: UIColor.gold),
+                    child: Icon(Icons.remove, color: UIColor.gold,size: 30.sp,),
                   
                   ),
                   SizedBox(width: 10.w,),
@@ -98,13 +98,13 @@ class CartCard extends StatelessWidget {
                       : Text(
                           quantity.toString(),
                           style:
-                              TextStyle(color: UIColor.gold, fontSize: 16.sp),
+                              TextStyle(color: UIColor.gold, fontSize: 19.sp),
                         ),
                                           SizedBox(width: 10.w,),
 
                   GestureDetector(
                     onTap: onIncrementTapped,
-                    child: Icon(Icons.add, color: UIColor.gold),
+                    child: Icon(Icons.add, color: UIColor.gold,size: 30.sp,),
                   
                   ),
                 ],

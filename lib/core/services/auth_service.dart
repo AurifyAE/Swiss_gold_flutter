@@ -30,7 +30,7 @@ class AuthService {
           LocalStorage.setString(
               {'mobile': responseData['userDetails']['contact'].toString()}),
           LocalStorage.setString(
-              {'location': responseData['userDetails']['location']}),
+              {'catogoryId': responseData['userDetails']['categoryId']}),
           LocalStorage.setString(
               {'category': responseData['userDetails']['categoryName']}),
         ]);

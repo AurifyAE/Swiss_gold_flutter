@@ -87,10 +87,19 @@ class _LoginViewState extends State<LoginView> {
                       {
                         "contact": int.parse(mobileController.text),
                         "password": passController.text,
-                        'token': token
+                        'token': token,
                       },
+                        
+                      
                     ).then((response) async {
-                      if (response!.success) {
+                      // Fixed: Check if response is null before accessing properties
+                      if (response == null) {
+                        customSnackBar(
+                            context: context, title: 'Login failed. Please try again.');
+                        return;
+                      }
+                      
+                      if (response.success) {
                         LocalStorage.setBool('isGuest', false);
                         FcmService.requestPermission();
                         customSnackBar(

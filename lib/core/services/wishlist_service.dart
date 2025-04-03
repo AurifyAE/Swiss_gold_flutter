@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
-
 import 'package:http/http.dart' as http;
 import 'package:swiss_gold/core/models/message.dart';
 import 'package:swiss_gold/core/models/wishlist_model.dart';

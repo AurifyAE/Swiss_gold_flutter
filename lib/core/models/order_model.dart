@@ -2,17 +2,22 @@ class OrderModel {
   final bool success;
   final String message;
   final List<OrderData> data;
+  final Pagination? pagination;
 
   OrderModel({
     required this.success,
     required this.message,
     required this.data,
+    this.pagination,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
+      pagination: json['pagination'] != null
+          ? Pagination.fromJson(json['pagination'])
+          : null,
       data: json['data'] != null
           ? List<OrderData>.from(
               json['data'].map((x) => OrderData.fromJson(x)),
@@ -25,20 +30,25 @@ class OrderModel {
 class OrderData {
   final String id;
   final num totalPrice;
+  final String? pricingOption;
   final String orderStatus;
   final String paymentStatus;
   final String paymentMethod;
+  final num? premiumAmount;
+  final num? discountAmount;
   final String deliveryDate;
   final String transactionId;
   final String? orderRemark;
   final String orderDate;
   final List<Item> item;
 
-  OrderData({
+  OrderData( {
     required this.id,
     required this.orderRemark,
+    this.premiumAmount, this.discountAmount,
+   this.pricingOption,
     required this.totalPrice,
-    required this.paymentMethod,
+   required this.paymentMethod,
     required this.orderStatus,
     required this.paymentStatus,
     required this.deliveryDate,
@@ -60,7 +70,12 @@ class OrderData {
       orderDate: json['orderDate'],
       item: json['items'] != null
           ? List<Item>.from(json['items'].map((x) => Item.fromJson(x)))
-          : [], // Provide a default empty list if items is null
+          : [], 
+
+          premiumAmount: json['premiumAmount'],
+          pricingOption: json['pricingOption'],
+          discountAmount: json['discountAmount']
+
     );
   }
 }
@@ -118,5 +133,23 @@ class ProductData {
           ? List<String>.from(json['images'].map((x) => x))
           : [],
     );
+  }
+}
+
+class Pagination {
+  final num totalCount;
+  final num totalPage;
+  final num currentPage;
+
+  Pagination(
+      {required this.currentPage,
+      required this.totalCount,
+      required this.totalPage});
+
+  factory Pagination.fromJson(Map<String, dynamic> json) {
+    return Pagination(
+        currentPage: json['currentPage'],
+        totalCount: json['totalOrders'],
+        totalPage: json['totalPages']);
   }
 }

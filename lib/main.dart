@@ -10,6 +10,7 @@ import 'package:swiss_gold/core/view_models/company_profile_view_model.dart';
 import 'package:swiss_gold/core/view_models/order_history_view_model.dart';
 import 'package:swiss_gold/core/view_models/product_view_model.dart';
 import 'package:swiss_gold/core/view_models/profile_view_model.dart';
+import 'package:swiss_gold/core/view_models/transaction_view_model.dart';
 import 'package:swiss_gold/core/view_models/wishlist_view_model.dart';
 import 'package:swiss_gold/firebase_options.dart';
 import 'package:swiss_gold/views/splash/splash_view.dart';
@@ -43,7 +44,8 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (context) => ProfileViewModel()),
           ChangeNotifierProvider(create: (context) => WishlistViewModel()),
           ChangeNotifierProvider(create: (context) => CompanyProfileViewModel()),
-            ChangeNotifierProvider(create: (context) => OrderHistoryViewModel())
+          ChangeNotifierProvider(create: (context) => OrderHistoryViewModel()),
+          ChangeNotifierProvider(create: (context) => TransactionViewModel())
 
 
           ],

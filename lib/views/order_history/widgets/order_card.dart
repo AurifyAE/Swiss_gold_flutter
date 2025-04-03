@@ -16,6 +16,9 @@ class OrderCard extends StatelessWidget {
   final bool expanded;
   final num totalPrice;
   final String? orderRemark;
+  final String? pricingOption;
+  final String? discountAmount;
+  final String? premiumAmount;
 
   final IconData icon;
 
@@ -23,7 +26,7 @@ class OrderCard extends StatelessWidget {
     super.key,
     required this.status,
     required this.paymentMethod,
-     this.orderRemark,
+    this.orderRemark,
     this.onTap,
     this.onRemoveTapped,
     required this.totalPrice,
@@ -31,7 +34,7 @@ class OrderCard extends StatelessWidget {
     required this.transactionId,
     required this.deliveryDate,
     required this.expanded,
-    required this.child,
+    required this.child, this.pricingOption, this.discountAmount, this.premiumAmount,
   });
 
   @override
@@ -113,66 +116,46 @@ class OrderCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        orderRemark!=null?SizedBox(height: 5.h,):SizedBox.shrink(),
-
-                         orderRemark!=null?
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Reason :',
-                              style: TextStyle(
-                                color: UIColor.gold,
-                                fontSize: 16.sp,
-                                fontFamily: 'Familiar',
-                              ),
-                            ),
-                            SizedBox(
-                              width: 10.w,
-                            ),
-                            Flexible(
-                              child: SizedBox(
-                                
-                                child: Text(
-                                  orderRemark.toString(),
-                                  maxLines: null,
-                                  style: TextStyle(
-                                    color: UIColor.gold,
-                                    fontSize: 16.sp,
-                                    fontFamily: 'Familiar',
+                        orderRemark != null
+                            ? SizedBox(
+                                height: 5.h,
+                              )
+                            : SizedBox.shrink(),
+                        orderRemark != null
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Reason :',
+                                    style: TextStyle(
+                                      color: UIColor.gold,
+                                      fontSize: 16.sp,
+                                      fontFamily: 'Familiar',
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ):SizedBox.shrink(),
-                       
-SizedBox(height: 5.h,),
-                        Row(
-                          children: [
-                            Text(
-                              'Total price :',
-                              style: TextStyle(
-                                color: UIColor.gold,
-                                fontSize: 16.sp,
-                                fontFamily: 'Familiar',
-                              ),
-                            ),
-                            SizedBox(
-                              width: 10.w,
-                            ),
-                            Text(
-                              totalPrice.toStringAsFixed(2),
-                              style: TextStyle(
-                                color: UIColor.gold,
-                                fontSize: 16.sp,
-                                fontFamily: 'Familiar',
-                              ),
-                            ),
-                          ],
+                                  SizedBox(
+                                    width: 10.w,
+                                  ),
+                                  Flexible(
+                                    child: SizedBox(
+                                      child: Text(
+                                        orderRemark.toString(),
+                                        maxLines: null,
+                                        style: TextStyle(
+                                          color: UIColor.gold,
+                                          fontSize: 16.sp,
+                                          fontFamily: 'Familiar',
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : SizedBox.shrink(),
+                        SizedBox(
+                          height: 5.h,
                         ),
-                        SizedBox(height: 5.h,),
-
+                       
                         Row(
                           children: [
                             Text(
@@ -196,8 +179,83 @@ SizedBox(height: 5.h,),
                             ),
                           ],
                         ),
+                        if(pricingOption!=null)
                         SizedBox(height: 5.h,),
-
+                        pricingOption!=null?
+                         Row(
+                          children: [
+                            Text(
+                              'Pricing Option :',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontSize: 16.sp,
+                                fontFamily: 'Familiar',
+                              ),
+                            ),
+                            SizedBox(
+                              width: 10.w,
+                            ),
+                            Text(
+                              pricingOption.toString(),
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontSize: 16.sp,
+                                fontFamily: 'Familiar',
+                              ),
+                            ),
+                          ],
+                        ):SizedBox.shrink(),
+                        if(pricingOption!=null)
+                        SizedBox(height: 5.h,),
+                        paymentMethod=='Cash' && discountAmount!=null?
+                      Row(
+                          children: [
+                            Text(
+                              'Discount Amount :',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontSize: 16.sp,
+                                fontFamily: 'Familiar',
+                              ),
+                            ),
+                            SizedBox(
+                              width: 10.w,
+                            ),
+                            Text(
+                              discountAmount.toString(),
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontSize: 16.sp,
+                                fontFamily: 'Familiar',
+                              ),
+                            ),
+                          ],
+                        ):  paymentMethod=='Bank' && premiumAmount!=null? Row(
+                          children: [
+                            Text(
+                              'Premium Amount :',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontSize: 16.sp,
+                                fontFamily: 'Familiar',
+                              ),
+                            ),
+                            SizedBox(
+                              width: 10.w,
+                            ),
+                            Text(
+                             premiumAmount.toString(),
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontSize: 16.sp,
+                                fontFamily: 'Familiar',
+                              ),
+                            ),
+                          ],
+                        ):SizedBox.shrink(),
+                        SizedBox(
+                          height: 5.h,
+                        ),
                         Row(
                           children: [
                             Text(
