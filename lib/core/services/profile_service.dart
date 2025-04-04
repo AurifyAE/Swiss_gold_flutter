@@ -11,27 +11,31 @@ import 'package:swiss_gold/core/utils/endpoint.dart';
 class ProfileService {
   static final client = http.Client();
 
-  static Future<CompanyProfileModel?> fetcCompanyProfile() async {
-    try {
-      var response = await client.get(
-        Uri.parse(companyProfileUrl),
-        headers: {
-          'X-Secret-Key': secreteKey,
-          'Content-Type': 'application/json'
-        }, // Encoding payload to JSON
-      );
+  static Future<CompanyProfileModel?> fetchCompanyProfile() async {
+  try {
+    final adminId = '67c1a8978399ea3181f5cad9'; // or 'adminId' if that's the key
+    final url = 'https://api.nova.aurify.ae/user/get-profile/$adminId';
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = jsonDecode(response.body);
+    var response = await client.get(
+      Uri.parse(url),
+      headers: {
+        'X-Secret-Key': 'IfiuH/ko+rh/gekRvY4Va0s+=uucP3xwIfo0e8YTN1INF',
+        'Content-Type': 'application/json'
+      },
+    );
 
-        return CompanyProfileModel.fromJson(responseData);
-      } else {
-        return null;
-      }
-    } catch (e) {
+    if (response.statusCode == 200) {
+      Map<String, dynamic> responseData = jsonDecode(response.body);
+      return CompanyProfileModel.fromJson(responseData);
+    } else {
       return null;
     }
+  } catch (e) {
+    log('Error fetching profile: $e');
+    return null;
   }
+}
+
 
   static Future<String?> fetchCompanyAd() async {
     try {

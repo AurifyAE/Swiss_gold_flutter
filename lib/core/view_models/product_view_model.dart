@@ -297,7 +297,7 @@ class ProductViewModel extends BaseModel {
 
   Future<void> _initializeIds() async {
     try {
-      _adminId = await LocalStorage.getString('adminId') ?? '';
+      _adminId = '67586119baf55a80a8277f01';
       _categoryId = await LocalStorage.getString('categoryId') ?? '';
       
       log('Initialized ProductViewModel with adminId: $_adminId, categoryId: $_categoryId');
@@ -365,30 +365,26 @@ class ProductViewModel extends BaseModel {
     notifyListeners();
   }
 
-  Future<void> getRealtimePrices() async {
-    _marketPriceState = ViewState.loading;
+  // Future<void> getRealtimePrices() async {
+  //   _marketPriceState = ViewState.loading;
+  //   notifyListeners();
+
+  //   try {
+  //     await ProductService.initializeSocketConnection();
+  //     ProductService.marketDataStream.listen((data) {
+  //       updateMarketData(data);
+  //     });
+  //   } catch (e) {
+  //     log('Error getting realtime prices: ${e.toString()}');
+  //   } finally {
+  //     _marketPriceState = ViewState.idle;
+  //     notifyListeners();
+  //   }
+  // }
+
+  void getSpotRate() async {
+    _goldSpotRate = await ProductService.getSpotRate();
     notifyListeners();
-
-    try {
-      await ProductService.initializeSocketConnection();
-      ProductService.marketDataStream.listen((data) {
-        updateMarketData(data);
-      });
-    } catch (e) {
-      log('Error getting realtime prices: ${e.toString()}');
-    } finally {
-      _marketPriceState = ViewState.idle;
-      notifyListeners();
-    }
-  }
-
-  Future<void> getSpotRate() async {
-    try {
-      log('Getting spot rate');
-      // Logic for spot rate
-    } catch (e) {
-      log('Error getting spot rate: ${e.toString()}');
-    }
   }
 
   Future<void> checkGuestMode() async {
@@ -400,6 +396,63 @@ class ProductViewModel extends BaseModel {
       _isGuest = false;
     }
     notifyListeners();
+  }
+  // Map<int, int> productQuantities = {};
+
+// Method to update product quantities
+// void updateProductQuantities(Map<int, int> quantities) {
+//   productQuantities = quantities;
+//   notifyListeners();
+// }
+
+    Future<void> getRealtimePrices() async {
+    _marketPriceState = ViewState.loading;
+    notifyListeners();
+
+    _marketData = await ProductService.initializeSocketConnection();
+
+    ProductService.marketDataStream.listen((data) {
+      _marketData = data;
+      // log('here we go ${_marketData.toString()}');
+      notifyListeners();
+    });
+
+    _marketPriceState = ViewState.idle;
+    notifyListeners();
+  }
+
+  // checkGuestMode() async {
+  //   _isGuest = await LocalStorage.getBool('isGuest');
+  //   notifyListeners();
+  // }
+
+  Future<void> listProducts(Map<String, dynamic> payload) async {
+    setState(ViewState.loading);
+    _productModel = await ProductService.listProducts(payload);
+    _productList.clear();
+
+    if (_productModel != null) {
+      _productList.addAll(_productModel!.data);
+    }
+
+    setState(ViewState.idle);
+    notifyListeners();
+  }
+
+  Future<void> loadMoreProducts(Map<String, dynamic> payload) async {
+    try {
+      if (_productModel!.page!.currentPage < _productModel!.page!.totalPage) {
+        setState(ViewState.loadingMore); // Optional: track loading more state
+        _productModel = await ProductService.listProducts(payload);
+        _productList.addAll(_productModel!.data);
+        setState(ViewState.idle); // Reset state
+        notifyListeners();
+      }
+    } catch (e) {
+      // log(e.toString());
+    } finally {
+      setState(ViewState.idle); // Reset state
+    }
   }
 
   // Simplified product fetch method with proper error handling

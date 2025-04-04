@@ -33,72 +33,75 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   Animation<double>? animation;
   String selectedValue = '';
   DateTime selectedDate = DateTime.now();
+  final FocusNode _pageFocusNode = FocusNode();
 
-void navigateToDeliveryDetails({String? paymentMethod, String? pricingOption, String? amount}) {
-  // Make sure we have a default value for the payment method
-  final effectivePaymentMethod = selectedValue != 'Gold' ? 
-    (paymentMethod ?? 'Cash') : 'Gold';
-  
-  Map<String, dynamic> finalPayload = {
-    "bookingData": bookingData,
-    "paymentMethod": effectivePaymentMethod,
-    // Only add pricingOption if it's not null and not Gold payment
-    if (selectedValue != 'Gold' && pricingOption != null) 
-      "pricingOption": pricingOption,
-    // Always ensure deliveryDate is not null
-    "deliveryDate": selectedDate.toString().split(' ')[0]
-  };
+  void navigateToDeliveryDetails(
+      {String? paymentMethod, String? pricingOption, String? amount}) {
+    final effectivePaymentMethod =
+        selectedValue != 'Gold' ? (paymentMethod ?? 'Cash') : 'Gold';
 
-  if (selectedValue == 'Gold' && pricingOption == 'Premium' && amount != null) {
-    finalPayload['premium'] = amount;
+    Map<String, dynamic> finalPayload = {
+      "bookingData": bookingData,
+      "paymentMethod": effectivePaymentMethod,
+      if (selectedValue != 'Gold' && pricingOption != null)
+        "pricingOption": pricingOption,
+      "deliveryDate": selectedDate.toString().split(' ')[0]
+    };
+
+    if (selectedValue == 'Gold' &&
+        pricingOption == 'Premium' &&
+        amount != null) {
+      finalPayload['premium'] = amount;
+    }
+    if (selectedValue != 'Gold' &&
+        pricingOption == 'Discount' &&
+        amount != null) {
+      finalPayload['discount'] = amount;
+    }
+
+    navigateWithAnimationTo(
+      context,
+      DeliveryDetailsView(
+        orderData: finalPayload,
+        onConfirm: (deliveryDetails) {
+          processOrder(finalPayload);
+        },
+      ),
+      0,
+      1,
+    );
   }
-  if (selectedValue != 'Gold' && pricingOption == 'Discount' && amount != null) {
-    finalPayload['discount'] = amount;
-  }
-
-  navigateWithAnimationTo(
-    context,
-    DeliveryDetailsView(
-      orderData: finalPayload,
-      onConfirm: (deliveryDetails) {
-        processOrder(finalPayload);
-      },
-    ),
-    0,
-    1,
-  );
-}
 
   void processOrder(Map<String, dynamic> finalPayload) {
-  context.read<ProductViewModel>().bookProducts(finalPayload).then((response) {
-    if (response!.success == true) {
-      setState(() {
-        selectedValue = '';
-        bookingData.clear();
-        productQuantities.clear();
-      });
-      
-      // Clear quantities in the ViewModel to update the UI
-      context.read<ProductViewModel>().clearQuantities();
+    context
+        .read<ProductViewModel>()
+        .bookProducts(finalPayload)
+        .then((response) {
+      if (response!.success == true) {
+        setState(() {
+          selectedValue = '';
+          bookingData.clear();
+          productQuantities.clear();
+        });
 
-      customSnackBar(
-        bgColor: UIColor.gold,
-        titleColor: UIColor.white,
-        width: 130.w,
-        context: context,
-        title: 'Booking success'
-      );
-    } else {
-      customSnackBar(
-        bgColor: UIColor.gold,
-        titleColor: UIColor.white,
-        width: 130.w,
-        context: context,
-        title: 'Booking failed'
-      );
-    }
-  });
-}
+        context.read<ProductViewModel>().clearQuantities();
+
+        customSnackBar(
+            bgColor: UIColor.gold,
+            titleColor: UIColor.white,
+            width: 130.w,
+            context: context,
+            title: 'Booking success');
+      } else {
+        customSnackBar(
+            bgColor: UIColor.gold,
+            titleColor: UIColor.white,
+            width: 130.w,
+            context: context,
+            title: 'Booking failed');
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -115,37 +118,77 @@ void navigateToDeliveryDetails({String? paymentMethod, String? pricingOption, St
       curve: Curves.easeInOut,
     );
 
-    // Setup scroll listener for pagination
-    scrollController.addListener(() {
-      if (scrollController.position.atEdge) {
-        if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
-          final model = context.read<ProductViewModel>();
-          
-          if (!model.isLoading && model.hasMoreData) {
-            currentPage++;
-            _loadMoreProducts();
+    scrollController.addListener(
+      () {
+        if (scrollController.position.atEdge) {
+          if (scrollController.position.pixels ==
+              scrollController.position.maxScrollExtent) {
+            final model = context.read<ProductViewModel>();
+
+            if (!model.isLoading && model.hasMoreData) {
+              currentPage++;
+              _loadMoreProducts();
+            }
           }
         }
-      }
-    });
-    
+      },
+    );
+
+    _syncQuantitiesFromViewModel();
+
+    _pageFocusNode.addListener(_onFocusChange);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchProductsDirectly();
     });
   }
 
-  // Simplified product fetching - directly call API without extra checks
+  void _onFocusChange() {
+    if (_pageFocusNode.hasFocus) {
+      _syncQuantitiesFromViewModel();
+    }
+  }
+
+  void _syncQuantitiesFromViewModel() {
+    final viewModel = context.read<ProductViewModel>();
+    setState(() {
+      productQuantities = Map<int, int>.from(viewModel.productQuantities);
+
+      _rebuildBookingData();
+    });
+  }
+
+  void _rebuildBookingData() {
+    bookingData.clear();
+
+    final productList = context.read<ProductViewModel>().productList;
+    productQuantities.forEach((index, quantity) {
+      if (index < productList.length && quantity > 0) {
+        final product = productList[index];
+        if (product.pId != null) {
+          bookingData.add({
+            "productId": product.pId,
+            "quantity": quantity,
+          });
+        }
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchProductsDirectly();
+    });
+  }
+
   void _fetchProductsDirectly() {
     final viewModel = context.read<ProductViewModel>();
-    // Initialize quantities from the ViewModel
+
     setState(() {
       productQuantities = Map<int, int>.from(viewModel.productQuantities);
     });
-    
-    // Simply fetch products without additional checks
+
     viewModel.fetchProducts();
   }
-  
+
   void _loadMoreProducts() {
     final viewModel = context.read<ProductViewModel>();
     viewModel.fetchProducts(null, null, currentPage.toString());
@@ -154,10 +197,12 @@ void navigateToDeliveryDetails({String? paymentMethod, String? pricingOption, St
   void addToBookingData(int index, String pId) {
     int quantity = productQuantities[index] ?? 1;
 
-    int existingIndex = bookingData.indexWhere((item) => item["productId"] == pId);
+    int existingIndex =
+        bookingData.indexWhere((item) => item["productId"] == pId);
 
     if (existingIndex != -1) {
-      bookingData[existingIndex]["quantity"] = (bookingData[existingIndex]["quantity"] ?? 0) + 1;
+      bookingData[existingIndex]["quantity"] =
+          (bookingData[existingIndex]["quantity"] ?? 0) + 1;
     } else {
       bookingData.add({
         "productId": pId,
@@ -167,11 +212,13 @@ void navigateToDeliveryDetails({String? paymentMethod, String? pricingOption, St
   }
 
   void removeFromBookingData(int index, String pId) {
-    int existingIndex = bookingData.indexWhere((item) => item["productId"] == pId);
+    int existingIndex =
+        bookingData.indexWhere((item) => item["productId"] == pId);
 
     if (existingIndex != -1) {
       if (bookingData[existingIndex]["quantity"] > 1) {
-        bookingData[existingIndex]["quantity"] = (bookingData[existingIndex]["quantity"] ?? 0) - 1;
+        bookingData[existingIndex]["quantity"] =
+            (bookingData[existingIndex]["quantity"] ?? 0) - 1;
       } else {
         bookingData.removeAt(existingIndex);
       }
@@ -180,8 +227,11 @@ void navigateToDeliveryDetails({String? paymentMethod, String? pricingOption, St
 
   void incrementQuantity(int index) {
     if (index >= context.read<ProductViewModel>().productList.length) {
-      return; // Safety check
+      return;
     }
+
+    final product = context.read<ProductViewModel>().productList[index];
+    if (product.pId == null) return;
 
     setState(() {
       if (productQuantities[index] != null) {
@@ -189,53 +239,62 @@ void navigateToDeliveryDetails({String? paymentMethod, String? pricingOption, St
       } else {
         productQuantities[index] = 1;
       }
-      context.read<ProductViewModel>().getTotalQuantity(Map<int, int>.from(productQuantities));
-      
-      final product = context.read<ProductViewModel>().productList[index];
-      if (product.pId != null) {
-        addToBookingData(index, product.pId);
-      }
+
+      context
+          .read<ProductViewModel>()
+          .getTotalQuantity(Map<int, int>.from(productQuantities));
+
+      addToBookingData(index, product.pId!);
     });
   }
 
   void decrementQuantity(int index) {
     if (index >= context.read<ProductViewModel>().productList.length) {
-      return; // Safety check
+      return;
     }
 
+    final product = context.read<ProductViewModel>().productList[index];
+    if (product.pId == null) return;
+
     setState(() {
-      if (productQuantities[index] != null && productQuantities[index]! >= 1) {
+      if (productQuantities[index] != null && productQuantities[index]! > 0) {
         productQuantities[index] = productQuantities[index]! - 1;
+
+        if (productQuantities[index] == 0) {
+          productQuantities.remove(index);
+        }
       }
-      context.read<ProductViewModel>().getTotalQuantity(Map<int, int>.from(productQuantities));
-      
-      final product = context.read<ProductViewModel>().productList[index];
-      if (product.pId != null) {
-        removeFromBookingData(index, product.pId);
-      }
+
+      context
+          .read<ProductViewModel>()
+          .getTotalQuantity(Map<int, int>.from(productQuantities));
+
+      removeFromBookingData(index, product.pId!);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Row(
-          children: [
-            Consumer<ProductViewModel>(
-              builder: (context, model, child) => Text(
-                'Total Quantity: ${model.totalQuantity}',
-                style: TextStyle(
-                    color: UIColor.gold,
-                    fontFamily: 'Familiar',
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.normal),
+    return Focus(
+      focusNode: _pageFocusNode,
+      child: Scaffold(
+        bottomNavigationBar: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Row(
+            children: [
+              Consumer<ProductViewModel>(
+                builder: (context, model, child) => Text(
+                  'Total Quantity: ${model.totalQuantity}',
+                  style: TextStyle(
+                      color: UIColor.gold,
+                      fontFamily: 'Familiar',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.normal),
+                ),
               ),
-            ),
-            Spacer(),
-            Flexible(
-              child: CustomOutlinedBtn(
+              Spacer(),
+              Flexible(
+                  child: CustomOutlinedBtn(
                 btnTextColor: UIColor.gold,
                 height: 40.h,
                 borderRadius: 12.sp,
@@ -245,239 +304,226 @@ void navigateToDeliveryDetails({String? paymentMethod, String? pricingOption, St
                 onTapped: () {
                   if (bookingData.isNotEmpty) {
                     showAnimatedDialog2(
-                      context,
-                      animationController!,
-                      animation!,
-                      'Choose Your Payment Option',
-                      'You can either pay using cash or opt for gold as your preferred payment method. Select an option to proceed',
-                      [
-                        SizedBox(height: 30.h),
-                        CustomOutlinedBtn(
-                          borderRadius: 12.sp,
-                          borderColor: UIColor.gold,
-                          padH: 12.w,
-                          padV: 12.h,
-                          onTapped: () {
-                            selectedValue = 'Gold';
-                            Navigator.pop(context);
-                            navigateToDeliveryDetails();
-                          },
-                          btnTextColor: UIColor.gold,
-                          btnText: 'Gold to Gold',
-                        ),
-                        SizedBox(height: 10.h),
-                        CustomOutlinedBtn(
-                          borderRadius: 12.sp,
-                          borderColor: UIColor.gold,
-                          padH: 12.w,
-                          padV: 12.h,
-                          onTapped: () {
-                            selectedValue = 'Cash';
-                            Navigator.pop(context);
-                            navigateToDeliveryDetails(
-                              paymentMethod: context.read<OrderHistoryViewModel>().cashPricingModel?.data.methodType,
-                              pricingOption: context.read<OrderHistoryViewModel>().cashPricingModel?.data.pricingType,
-                              amount: context.read<OrderHistoryViewModel>().cashPricingModel?.data.value.toString()
-                            );
-                          },
-                          btnTextColor: UIColor.gold,
-                          btnText: 'Cash',
-                        ),
-
-                        // GestureDetector(
-                        //   onTap: () {
-                        //     Navigator.pop(context);
-                        //     navigateToDeliveryDetails(
-                        //       paymentMethod: context.read<OrderHistoryViewModel>().cashPricingModel?.data.methodType,
-                        //       pricingOption: context.read<OrderHistoryViewModel>().cashPricingModel?.data.pricingType,
-                        //       amount: context.read<OrderHistoryViewModel>().cashPricingModel?.data.value.toString()
-                        //     );
-                        //   },
-                        //   child: Container(
-                        //     padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
-                        //     decoration: BoxDecoration(
-                        //       borderRadius: BorderRadius.circular(12.sp),
-                        //       border: Border.all(color: UIColor.gold),
-                        //     ),
-                        //     child: Row(
-                        //       crossAxisAlignment: CrossAxisAlignment.center,
-                        //       children: [
-                        //         Text(
-                        //           'Cash',
-                        //           style: TextStyle(
-                        //             fontFamily: 'Familiar',
-                        //             color: UIColor.gold,
-                        //             fontSize: 14.sp
-                        //           ),
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ),
-                        // ),
-                      ]
-                    );
+                        context,
+                        animationController!,
+                        animation!,
+                        'Choose Your Payment Option',
+                        'You can either pay using cash or opt for gold as your preferred payment method. Select an option to proceed',
+                        [
+                          SizedBox(height: 30.h),
+                          CustomOutlinedBtn(
+                            borderRadius: 12.sp,
+                            borderColor: UIColor.gold,
+                            padH: 12.w,
+                            padV: 12.h,
+                            onTapped: () {
+                              selectedValue = 'Gold';
+                              Navigator.pop(context);
+                              navigateToDeliveryDetails();
+                            },
+                            btnTextColor: UIColor.gold,
+                            btnText: 'Gold to Gold',
+                          ),
+                          SizedBox(height: 10.h),
+                          CustomOutlinedBtn(
+                            borderRadius: 12.sp,
+                            borderColor: UIColor.gold,
+                            padH: 12.w,
+                            padV: 12.h,
+                            onTapped: () {
+                              selectedValue = 'Cash';
+                              Navigator.pop(context);
+                              navigateToDeliveryDetails(
+                                  paymentMethod: context
+                                      .read<OrderHistoryViewModel>()
+                                      .cashPricingModel
+                                      ?.data
+                                      .methodType,
+                                  pricingOption: context
+                                      .read<OrderHistoryViewModel>()
+                                      .cashPricingModel
+                                      ?.data
+                                      .pricingType,
+                                  amount: context
+                                      .read<OrderHistoryViewModel>()
+                                      .cashPricingModel
+                                      ?.data
+                                      .value
+                                      .toString());
+                            },
+                            btnTextColor: UIColor.gold,
+                            btnText: 'Cash',
+                          ),
+                        ]);
                   } else {
                     customSnackBar(
-                      bgColor: UIColor.gold,
-                      titleColor: UIColor.white,
-                      width: 180.w,
-                      context: context,
-                      title: 'Please select products'
-                    );
+                        bgColor: UIColor.gold,
+                        titleColor: UIColor.white,
+                        width: 180.w,
+                        context: context,
+                        title: 'Please select products');
                   }
                 },
                 btnText: 'Place order',
-              )
-            )
-          ],
-        ),
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-        child: SingleChildScrollView(
-          controller: scrollController,
-          child: Column(
-            children: [
-              Consumer<ProductViewModel>(builder: (context, model, child) {
-                if (model.state == ViewState.loading) {
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: 6,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16.h,
-                      crossAxisSpacing: 16.w
-                    ),
-                    itemBuilder: (context, index) {
-                      return CategoryShimmer();
-                    }
-                  );
-                } else if (model.productList.isEmpty) {
-                  return Center(
-                    heightFactor: 2.h,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(ImageAssets.noProducts),
-                        SizedBox(height: 10.h),
-                        Text(
-                          "Sorry no products found\ntry some other category",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: UIColor.gold,
-                            fontSize: 20.sp,
-                            fontFamily: 'Familiar',
-                          ),
-                        )
-                      ],
-                    ),
-                  );
-                } else {
-                  return Column(
-                    children: [
-                      GridView.builder(
-                        physics: NeverScrollableScrollPhysics(),
-                        key: PageStorageKey('productKey'),
-                        shrinkWrap: true,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 16.h,
-                          crossAxisSpacing: 16.w
-                        ),
-                        itemCount: model.productList.length,
-                        itemBuilder: (context, index) {
-                          final product = model.productList[index];
-                          // Handle potentially null values safely
-                          final String productId = product.pId ?? '';
-                          final String imageUrl = product.prodImgs.isNotEmpty ? 
-                              product.prodImgs[0].url : 'https://via.placeholder.com/150';
-                          final String title = product.title ?? 'Unknown Product';
-                          final int quantity = productQuantities[index] ?? 0;
-                          final String price = product.type?.toLowerCase() == 'gold' 
-                              ? 'AED ${(model.goldSpotRate ?? 0).toStringAsFixed(2)}' 
-                              : 'AED ${(product.price ?? 0).toStringAsFixed(2)}';
-                          final String productType = product.type ?? 'Unknown';
-                          
-                          return CustomCard(
-                            onIncrement: () => incrementQuantity(index),
-                            onDecrement: () => decrementQuantity(index),
-                            onAddToCart: () {
-                              if (model.isGuest == false) {
-                                context.read<CartViewModel>().updateQuantityFromHome(
-                                  productId, 
-                                  {'quantity': productQuantities[index] ?? 1}
-                                ).then((response) {
-                                  if (response?.success == true) {
-                                    setState(() {
-                                      productQuantities.remove(index);
-                                    });
-                                    context.read<ProductViewModel>().getTotalQuantity(
-                                      Map<int, int>.from(productQuantities)
-                                    );
-                                  }
-                                  customSnackBar(
-                                    context: context,
-                                    width: 250.w,
-                                    bgColor: UIColor.gold,
-                                    title: response?.message?.toString() ?? 'Action completed',
-                                  );
-                                });
-                              } else {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => LoginView()),
-                                  (route) => false
-                                );
-                              }
-                            },
-                            prodImg: imageUrl,
-                            title: title,
-                            quantity: quantity,
-                            price: price,
-                            subTitle: productType,
-                            onTap: () {
-                              navigateWithAnimationTo(
-                                context,
-                                ProductView(
-                                  prodImg: product.prodImgs.map((e) => e.url ?? '').toList(),
-                                  title: title,
-                                  pId: productId,
-                                  desc: product.desc ?? '',
-                                  type: productType,
-                                  stock: product.stock ?? false,
-                                  purity: product.purity ?? 0,
-                                  weight: product.weight ?? 0,
-                                  makingCharge: product.makingCharge ?? 0,
-                                ),
-                                0,
-                                1
-                              );
-                            },
-                          );
-                        },
-                      ),
-                      // Loading indicator for pagination
-                      if (model.state == ViewState.loadingMore)
-                        Padding(
-                          padding: EdgeInsets.only(top: 20.h),
-                          child: Center(
-                            child: CircularProgressIndicator(color: UIColor.gold),
-                          ),
-                        ),
-                    ],
-                  );
-                }
-              })
+              ))
             ],
+          ),
+        ),
+        body: Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              children: [
+                Consumer<ProductViewModel>(builder: (context, model, child) {
+                  if (model.state == ViewState.loading) {
+                    return GridView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: 6,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16.h,
+                            crossAxisSpacing: 16.w),
+                        itemBuilder: (context, index) {
+                          return CategoryShimmer();
+                        });
+                  } else if (model.productList.isEmpty) {
+                    return Center(
+                      heightFactor: 2.h,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(ImageAssets.noProducts),
+                          SizedBox(height: 10.h),
+                          Text(
+                            "Sorry no products found\ntry some other category",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: UIColor.gold,
+                              fontSize: 20.sp,
+                              fontFamily: 'Familiar',
+                            ),
+                          )
+                        ],
+                      ),
+                    );
+                  } else {
+                    return Column(
+                      children: [
+                        GridView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          key: PageStorageKey('productKey'),
+                          shrinkWrap: true,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: 16.h,
+                                  crossAxisSpacing: 16.w),
+                          itemCount: model.productList.length,
+                          itemBuilder: (context, index) {
+                            final product = model.productList[index];
+
+                            final String productId = product.pId ?? '';
+                            final String imageUrl = product.prodImgs.isNotEmpty
+                                ? product.prodImgs[0].url
+                                : 'https://via.placeholder.com/150';
+                            final String title =
+                                product.title ?? 'Unknown Product';
+                            final int quantity = productQuantities[index] ?? 0;
+                            final String price = product.type?.toLowerCase() ==
+                                    'gold'
+                                ? 'AED ${(model.goldSpotRate ?? 0).toStringAsFixed(2)}'
+                                : 'AED ${(product.price ?? 0).toStringAsFixed(2)}';
+                            final String productType =
+                                product.type ?? 'Unknown';
+
+                            return CustomCard(
+                              onIncrement: () => incrementQuantity(index),
+                              onDecrement: () => decrementQuantity(index),
+                              onAddToCart: () {
+                                if (model.isGuest == false) {
+                                  context
+                                      .read<CartViewModel>()
+                                      .updateQuantityFromHome(productId, {
+                                    'quantity': productQuantities[index] ?? 1
+                                  }).then((response) {
+                                    if (response?.success == true) {
+                                      setState(() {
+                                        productQuantities.remove(index);
+                                      });
+                                      context
+                                          .read<ProductViewModel>()
+                                          .getTotalQuantity(Map<int, int>.from(
+                                              productQuantities));
+                                    }
+                                    customSnackBar(
+                                      context: context,
+                                      width: 250.w,
+                                      bgColor: UIColor.gold,
+                                      title: response?.message?.toString() ??
+                                          'Action completed',
+                                    );
+                                  });
+                                } else {
+                                  Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => LoginView()),
+                                      (route) => false);
+                                }
+                              },
+                              prodImg: imageUrl,
+                              title: title,
+                              quantity: quantity,
+                              price: price,
+                              subTitle: productType,
+                              onTap: () {
+                                navigateWithAnimationTo(
+                                    context,
+                                    ProductView(
+                                      prodImg: product.prodImgs
+                                          .map((e) => e.url ?? '')
+                                          .toList(),
+                                      title: title,
+                                      pId: productId,
+                                      desc: product.desc ?? '',
+                                      type: productType,
+                                      stock: product.stock ?? false,
+                                      purity: product.purity ?? 0,
+                                      weight: product.weight ?? 0,
+                                      makingCharge: product.makingCharge ?? 0,
+                                    ),
+                                    0,
+                                    1);
+                              },
+                            );
+                          },
+                        ),
+                        if (model.state == ViewState.loadingMore)
+                          Padding(
+                            padding: EdgeInsets.only(top: 20.h),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                  color: UIColor.gold),
+                            ),
+                          ),
+                      ],
+                    );
+                  }
+                })
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-  
+
   @override
   void dispose() {
+    _pageFocusNode.removeListener(_onFocusChange);
+    _pageFocusNode.dispose();
     animationController?.dispose();
     scrollController.dispose();
     super.dispose();

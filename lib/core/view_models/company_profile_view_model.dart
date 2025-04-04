@@ -11,7 +11,7 @@ class CompanyProfileViewModel extends BaseModel {
 
   Future<void> fetchCompanyProfile() async {
     setState(ViewState.loading);
-    _companyProfileModel = await ProfileService.fetcCompanyProfile();
+    _companyProfileModel = await ProfileService.fetchCompanyProfile();
     setState(ViewState.idle);
     notifyListeners();
   }

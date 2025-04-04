@@ -6,6 +6,8 @@ import 'package:swiss_gold/core/services/auth_service.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/view_models/base_model.dart';
 
+import '../services/local_storage.dart';
+
 class AuthViewModel extends BaseModel {
   UserModel? _userModel;
 
@@ -25,5 +27,20 @@ class AuthViewModel extends BaseModel {
 
     setState(ViewState.idle);
     return _messageModel;
+  }
+
+  bool _isGuest = false;
+
+  bool get isGuest => _isGuest;
+
+  Future<void> checkGuestMode() async {
+    try {
+      _isGuest = await LocalStorage.getBool('isGuest') ?? false;
+      log('Guest mode: $_isGuest');
+    } catch (e) {
+      log('Error checking guest mode: ${e.toString()}');
+      _isGuest = false;
+    }
+    notifyListeners();
   }
 }
