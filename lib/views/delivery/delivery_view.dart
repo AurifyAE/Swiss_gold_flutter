@@ -46,14 +46,10 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
     return totalWeight;
   }
 
-  // Calculate total amount for cash payment using real gold spot rate
+  // Calculate total amount for cash payment using product price directly
   double calculateTotalAmount(ProductViewModel productViewModel) {
     double totalAmount = 0.0;
     List bookingData = widget.orderData["bookingData"] as List;
-    double? goldSpotRate = productViewModel.goldSpotRate;
-    
-    // Use the real gold spot rate instead of hard-coded value
-    double pricePerGram = goldSpotRate ?? 0.0;
     
     for (var item in bookingData) {
       String productId = item["productId"];
@@ -66,12 +62,12 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
       );
       
       if (product != null) {
-        // Calculate price based on product weight and current gold rate
-        double productWeight = product.weight.toDouble();
+        // Use product price directly instead of calculating from gold rate
+        double productPrice = product.price.toDouble();
         double makingCharge = product.makingCharge.toDouble();
         
         // Add product price + making charge
-        double productTotal = (productWeight * pricePerGram) + makingCharge;
+        double productTotal = productPrice + makingCharge;
         totalAmount += productTotal * quantity;
       }
     }
@@ -106,11 +102,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
   @override
   Widget build(BuildContext context) {
     final productViewModel = Provider.of<ProductViewModel>(context);
-    
-    // Ensure we have gold spot rate data
-    if (productViewModel.goldSpotRate == null) {
-      productViewModel.getSpotRate();
-    }
     
     final isGoldPayment = widget.orderData["paymentMethod"] == 'Gold';
     final totalWeight = calculateTotalWeight(productViewModel);
@@ -245,7 +236,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           ),
                         ),
                         Text(
-                          widget.orderData["paymentMethod"],
+                          widget.orderData["paymentMethod"] ?? 'Not specified',
                           style: TextStyle(
                             color: UIColor.gold,
                             fontFamily: 'Familiar',
@@ -270,7 +261,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           ),
                         ),
                         Text(
-                          widget.orderData["deliveryDate"],
+                          widget.orderData["deliveryDate"] ?? 'Not specified',
                           style: TextStyle(
                             color: UIColor.gold,
                             fontFamily: 'Familiar',
@@ -305,33 +296,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         ),
                       ],
                     ),
-                    // SizedBox(height: 12.h),
-                    
-                    // // Current Gold Rate
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //   children: [
-                    //     Text(
-                    //       'Current Gold Rate:',
-                    //       style: TextStyle(
-                    //         color: UIColor.gold,
-                    //         fontFamily: 'Familiar',
-                    //         fontSize: 16.sp,
-                    //       ),
-                    //     ),
-                    //     Text(
-                    //       productViewModel.goldSpotRate != null
-                    //           ? 'AED ${productViewModel.goldSpotRate!.toStringAsFixed(2)}/g'
-                    //           : 'Loading...',
-                    //       style: TextStyle(
-                    //         color: UIColor.gold,
-                    //         fontFamily: 'Familiar',
-                    //         fontSize: 16.sp,
-                    //         fontWeight: FontWeight.bold,
-                    //       ),
-                    //     ),
-                    //   ],
-                    // ),
                     
                     // Show total gold weight only for Gold payment
                     if (isGoldPayment) ...[
@@ -471,12 +435,12 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   // Get actual product info
                   final product = getProductById(productId, productViewModel);
                   final productWeight = product?.weight.toDouble() ?? 0.0;
+                  final productPrice = product?.price.toDouble() ?? 0.0;
                   final makingCharge = product?.makingCharge.toDouble() ?? 0.0;
                   final productTitle = product?.title ?? 'Product #$productId';
                   
-                  // Calculate cost using real gold spot rate
-                  final goldRate = productViewModel.goldSpotRate ?? 0.0;
-                  final itemValue = (productWeight * goldRate * quantity) + (makingCharge * quantity);
+                  // Calculate cost using product price directly
+                  final itemValue = (productPrice * quantity) + (makingCharge * quantity);
                   
                   return Container(
                     margin: EdgeInsets.only(bottom: 10.h),
@@ -499,28 +463,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        // SizedBox(height: 8.h),
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //   children: [
-                        //     Text(
-                        //       'Product ID:',
-                        //       style: TextStyle(
-                        //         color: UIColor.gold,
-                        //         fontFamily: 'Familiar',
-                        //         fontSize: 14.sp,
-                        //       ),
-                        //     ),
-                        //     Text(
-                        //       productId,
-                        //       style: TextStyle(
-                        //         color: UIColor.gold,
-                        //         fontFamily: 'Familiar',
-                        //         fontSize: 14.sp,
-                        //       ),
-                        //     ),
-                        //   ],
-                        // ),
                         SizedBox(height: 4.h),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -589,30 +531,54 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ],
                         ),
-                        // if (makingCharge > 0) ...[
-                        //   SizedBox(height: 4.h),
-                        //   Row(
-                        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //     children: [
-                        //       Text(
-                        //         'Making Charge:',
-                        //         style: TextStyle(
-                        //           color: UIColor.gold,
-                        //           fontFamily: 'Familiar',
-                        //           fontSize: 14.sp,
-                        //         ),
-                        //       ),
-                        //       Text(
-                        //         'AED ${makingCharge.toStringAsFixed(2)}',
-                        //         style: TextStyle(
-                        //           color: UIColor.gold,
-                        //           fontFamily: 'Familiar',
-                        //           fontSize: 14.sp,
-                        //         ),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // ],
+                        // Show unit price from product model
+                        SizedBox(height: 4.h),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Unit Price:',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontFamily: 'Familiar',
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                            Text(
+                              'AED ${productPrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontFamily: 'Familiar',
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Making charge
+                        if (makingCharge > 0) ...[
+                          SizedBox(height: 4.h),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Making Charge:',
+                                style: TextStyle(
+                                  color: UIColor.gold,
+                                  fontFamily: 'Familiar',
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                              Text(
+                                'AED ${makingCharge.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: UIColor.gold,
+                                  fontFamily: 'Familiar',
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         // Show per-item cash value only for Cash payment
                         if (!isGoldPayment) ...[
                           SizedBox(height: 4.h),
@@ -668,31 +634,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    // SizedBox(height: 12.h),
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //   children: [
-                    //     Text(
-                    //       'Current Gold Rate:',
-                    //       style: TextStyle(
-                    //         color: UIColor.gold,
-                    //         fontFamily: 'Familiar',
-                    //         fontSize: 16.sp,
-                    //       ),
-                    //     ),
-                    //     Text(
-                    //       productViewModel.goldSpotRate != null
-                    //           ? 'AED ${productViewModel.goldSpotRate!.toStringAsFixed(2)}/g'
-                    //           : 'Loading...',
-                    //       style: TextStyle(
-                    //         color: UIColor.gold,
-                    //         fontFamily: 'Familiar',
-                    //         fontSize: 16.sp,
-                    //         fontWeight: FontWeight.bold,
-                    //       ),
-                    //     ),
-                    //   ],
-                    // ),
+                    SizedBox(height: 12.h),
                     
                     // For Gold payment, show total gold weight prominently
                     if (isGoldPayment) ...[
@@ -764,8 +706,13 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   padV: 12.h,
                   width: 200.w,
                   onTapped: () {
-                    // Just pass an empty map since we're not collecting user data
+                    // Call the onConfirm callback with an empty map
                     widget.onConfirm({});
+                    
+                    // Reset product quantities in the ProductViewModel
+                    final productViewModel = Provider.of<ProductViewModel>(context, listen: false);
+                    productViewModel.clearQuantities();
+                    
                     Navigator.pop(context);
                   },
                   btnTextColor: UIColor.gold,
