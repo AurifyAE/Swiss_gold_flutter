@@ -456,63 +456,85 @@ class ProductViewModel extends BaseModel {
   }
 
   // Simplified product fetch method with proper error handling
-  Future<void> fetchProducts([String? adminId, String? categoryId, String pageIndex = "1"]) async {
+//  class ProductViewModel extends BaseModel {
+  // Existing properties...
+  
+  // Add a flag to prevent duplicate fetches in progress
+  bool _fetchInProgress = false;
+
+  // Modified fetch method to prevent duplicate calls
+Future<void> fetchProducts([String? adminId, String? categoryId, String pageIndex = "0"]) async {
+  // Skip if a fetch is already in progress
+  if (_fetchInProgress) {
+    log('Fetch already in progress, skipping duplicate request');
+    return;
+  }
+  
+  _fetchInProgress = true;
+  
+  // Set appropriate state based on whether this is first page or pagination
+  if (pageIndex == "0") {
     setState(ViewState.loading);
-    isLoading = true;
+    _productList.clear();
+    hasMoreData = true;
+  } else {
+    setState(ViewState.loadingMore);
+  }
+  
+  isLoading = true;
+  
+  try {
+    // Use provided IDs or fall back to stored IDs
+    final String finalAdminId = adminId ?? _adminId ?? '';
+    final String finalCategoryId = categoryId ?? _categoryId ?? '';
     
-    try {
-      // Use provided IDs or fall back to stored IDs, or defaults
-      final String finalAdminId = adminId ?? _adminId ?? '';
-      final String finalCategoryId = categoryId ?? _categoryId ?? '';
-      
-      log('Fetching products with adminId: $finalAdminId, categoryId: $finalCategoryId, page: $pageIndex');
-      
-      if (pageIndex == "1") {
+    log('Fetching products with adminId: $finalAdminId, categoryId: $finalCategoryId, page: $pageIndex');
+    
+    final productsData = await ProductService.fetchProducts(finalAdminId, finalCategoryId);
+    log('API returned ${productsData.length} products');
+    
+    if (productsData is List) {
+      // Only clear products if this is the first page
+      if (pageIndex == "0") {
         _productList.clear();
-        hasMoreData = true;
-      } else {
-        setState(ViewState.loadingMore);
       }
       
-      final productsData = await ProductService.fetchProducts(finalAdminId, finalCategoryId);
-      log('API returned ${productsData.length} products');
-      
-      if (productsData is List) {
-        for (var item in productsData) {
-          try {
-            // Create Product with null safety
-            final product = Product.fromJson(item);
-            _productList.add(product);
-          } catch (e) {
-            log('Error parsing product: ${e.toString()}');
-          }
+      // Parse products and add to list
+      for (var item in productsData) {
+        try {
+          final product = Product.fromJson(item);
+          _productList.add(product);
+        } catch (e) {
+          log('Error parsing product: ${e.toString()}');
         }
-        
-        // Create a dummy page info if not provided by API
-        _productModel = ProductModel(
-          success: _productList.isNotEmpty,
-          data: List.from(_productList), // Create a copy
-          page: Page(currentPage: int.parse(pageIndex), totalPage: 1),
-        );
-        
-        hasMoreData = _productModel!.page!.currentPage < _productModel!.page!.totalPage;
-      } else {
-        log('API returned unexpected data format');
-        hasMoreData = false;
       }
-    } catch (e) {
-      log('Error fetching products: ${e.toString()}');
+      
+      _productModel = ProductModel(
+        success: _productList.isNotEmpty,
+        data: List.from(_productList),
+        page: Page(currentPage: int.parse(pageIndex), totalPage: productsData.isNotEmpty ? 2 : 1),
+      );
+      
+      hasMoreData = _productModel!.page!.currentPage < _productModel!.page!.totalPage;
+    } else {
+      log('API returned unexpected data format');
       hasMoreData = false;
-    } finally {
-      setState(ViewState.idle);
-      isLoading = false;
-      notifyListeners();
+    }
+  } catch (e) {
+    log('Error fetching products: ${e.toString()}');
+    hasMoreData = false;
+  } finally {
+    setState(ViewState.idle);
+    isLoading = false;
+    _fetchInProgress = false;
+    notifyListeners();
     }
   }
-
-  @override
-  void dispose() {
-    ProductService.dispose();
-    super.dispose();
-  }
 }
+
+  // @override
+  // void dispose() {
+  //   ProductService.dispose();
+  //   super.dispose();
+  // }
+// }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
+import 'package:swiss_gold/core/utils/endpoint.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/utils/image_assets.dart';
 import 'package:swiss_gold/core/utils/navigate.dart';
@@ -34,6 +35,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   String selectedValue = '';
   DateTime selectedDate = DateTime.now();
   final FocusNode _pageFocusNode = FocusNode();
+  bool _initialFetchDone = false;
 
   void navigateToDeliveryDetails(
       {String? paymentMethod, String? pricingOption, String? amount}) {
@@ -104,96 +106,124 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    context.read<OrderHistoryViewModel>().getCashPricing('Cash');
-    context.read<OrderHistoryViewModel>().getBankPricing('Bank');
+ @override
+void initState() {
+  super.initState();
+  context.read<OrderHistoryViewModel>().getCashPricing('Cash');
+  context.read<OrderHistoryViewModel>().getBankPricing('Bank');
 
-    animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    animation = CurvedAnimation(
-      parent: animationController!,
-      curve: Curves.easeInOut,
-    );
+  animationController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 300),
+  );
+  animation = CurvedAnimation(
+    parent: animationController!,
+    curve: Curves.easeInOut,
+  );
 
-    scrollController.addListener(
-      () {
-        if (scrollController.position.atEdge) {
-          if (scrollController.position.pixels ==
-              scrollController.position.maxScrollExtent) {
-            final model = context.read<ProductViewModel>();
+  scrollController.addListener(
+    () {
+      if (scrollController.position.atEdge) {
+        if (scrollController.position.pixels ==
+            scrollController.position.maxScrollExtent) {
+          final model = context.read<ProductViewModel>();
 
-            if (!model.isLoading && model.hasMoreData) {
-              currentPage++;
-              _loadMoreProducts();
-            }
+          if (!model.isLoading && model.hasMoreData) {
+            currentPage++;
+            _loadMoreProducts();
           }
         }
-      },
-    );
-
-    _syncQuantitiesFromViewModel();
-
-    _pageFocusNode.addListener(_onFocusChange);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchProductsDirectly();
-    });
-  }
-
-  void _onFocusChange() {
-    if (_pageFocusNode.hasFocus) {
-      _syncQuantitiesFromViewModel();
-    }
-  }
-
-  void _syncQuantitiesFromViewModel() {
-    final viewModel = context.read<ProductViewModel>();
-    setState(() {
-      productQuantities = Map<int, int>.from(viewModel.productQuantities);
-
-      _rebuildBookingData();
-    });
-  }
-
-  void _rebuildBookingData() {
-    bookingData.clear();
-
-    final productList = context.read<ProductViewModel>().productList;
-    productQuantities.forEach((index, quantity) {
-      if (index < productList.length && quantity > 0) {
-        final product = productList[index];
-        if (product.pId != null) {
-          bookingData.add({
-            "productId": product.pId,
-            "quantity": quantity,
-          });
-        }
       }
-    });
+    },
+  );
+
+  _pageFocusNode.addListener(_onFocusChange);
+
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!_initialFetchDone) {
+      // First sync quantities from the view model
+      _syncQuantitiesFromViewModel();
+      
+      // Then fetch products only if they haven't been fetched yet
+      if (context.read<ProductViewModel>().productList.isEmpty) {
+        context.read<ProductViewModel>().fetchProducts();
+      }
+      _initialFetchDone = true;
+    }
+  });
+}
+
+void _onFocusChange() {
+  if (_pageFocusNode.hasFocus) {
+    // Just sync quantities when focus changes, don't fetch products
+    _syncQuantitiesFromViewModel();
+  }
+}
+
+void _syncQuantitiesFromViewModel() {
+  final viewModel = context.read<ProductViewModel>();
+  setState(() {
+    productQuantities = Map<int, int>.from(viewModel.productQuantities);
+    _updateBookingData();
+  });
+}
+
+// New method that updates booking data without triggering a fetch
+void _updateBookingData() {
+  bookingData.clear();
+
+  final productList = context.read<ProductViewModel>().productList;
+  productQuantities.forEach((index, quantity) {
+    if (index < productList.length && quantity > 0) {
+      final product = productList[index];
+      if (product.pId != null) {
+        bookingData.add({
+          "productId": product.pId,
+          "quantity": quantity,
+        });
+      }
+    }
+  });
+}
+
+void _rebuildBookingData() {
+  bookingData.clear();
+
+  final productList = context.read<ProductViewModel>().productList;
+  productQuantities.forEach((index, quantity) {
+    if (index < productList.length && quantity > 0) {
+      final product = productList[index];
+      if (product.pId != null) {
+        bookingData.add({
+          "productId": product.pId,
+          "quantity": quantity,
+        });
+      }
+    }
+  });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchProductsDirectly();
     });
   }
 
-  void _fetchProductsDirectly() {
-    final viewModel = context.read<ProductViewModel>();
+void _fetchProductsDirectly() {
+  final viewModel = context.read<ProductViewModel>();
 
-    setState(() {
-      productQuantities = Map<int, int>.from(viewModel.productQuantities);
-    });
+  setState(() {
+    productQuantities = Map<int, int>.from(viewModel.productQuantities);
+  });
 
-    viewModel.fetchProducts();
-  }
+  viewModel.fetchProducts();
+}
 
-  void _loadMoreProducts() {
-    final viewModel = context.read<ProductViewModel>();
-    viewModel.fetchProducts(null, null, currentPage.toString());
-  }
+void _loadMoreProducts() {
+  final viewModel = context.read<ProductViewModel>();
+  final String adminId = viewModel.adminId ?? '';
+  final String categoryId = viewModel.categoryId ?? '';
+  viewModel.fetchProducts(adminId, categoryId, currentPage.toString());
+}
 
   void addToBookingData(int index, String pId) {
     int quantity = productQuantities[index] ?? 1;

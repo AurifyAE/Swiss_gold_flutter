@@ -29,7 +29,7 @@ const String changePassUrl = '$baseUrl/forgot-password/$adminId';
 const String getVideoBannerUrl = 'https://api.aurify.ae/get-VideoBanner/$oldAdminId';
 const String confirmQuantityUrl = '$baseUrl/order_quantity_confirmation';
 const String getOrderHistoryUrl =
-    '$baseUrl/fetch-order/$adminId/{userId}?page={index}&orderStatus={status}';
+    '$baseUrl/fetch-order/$oldAdminId/{userId}?page={index}&orderStatus={status}';
 const String getSpotRateUrl = 'https://api.aurify.ae/user/get-spotrates/$oldAdminId';
 const String updateQuantityFromHomeUrl =
     '$baseUrl/cart/update-quantity/$adminId/{userId}/{pId}';

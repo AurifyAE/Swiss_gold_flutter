@@ -230,39 +230,61 @@ class _ProductViewState extends State<ProductView>
           });
         });
   }
+StreamSubscription? _marketDataSubscription;
 
-  @override
-  void initState() {
-    super.initState();
-      context.read<OrderHistoryViewModel>().getCashPricing('Cash');
-    context.read<OrderHistoryViewModel>().getBankPricing('Bank');
-    animationController = AnimationController(
-      vsync: this,
-      duration:
-          const Duration(milliseconds: 300), // Adjust duration for animation
-    );
-    animation = CurvedAnimation(
-      parent: animationController!,
-      curve: Curves.easeInOut,
-    );
-    context.read<ProductViewModel>().getSpotRate();
-    ProductService.marketDataStream.listen((marketData) {
-      // Store prices based on the symbol
-      String symbol = marketData['symbol'].toString().toLowerCase();
-
-      if (mounted) {
-        // Check if the widget is still mounted
-        if (symbol == 'gold') {
-          setState(() {
-            goldBid = (marketData['bid'] is int)
-                ? (marketData['bid'] as int).toDouble()
-                : marketData['bid'];
-          });
-        }
-      }
-    });
-    context.read<ProductViewModel>().checkGuestMode();
+@override
+void initState() {
+  super.initState();
+  
+  // Check if pricing data is already available before fetching
+  final orderHistoryViewModel = context.read<OrderHistoryViewModel>();
+  if (orderHistoryViewModel.cashPricingModel == null) {
+    orderHistoryViewModel.getCashPricing('Cash');
   }
+  
+  if (orderHistoryViewModel.bankPricingModel == null) {
+    orderHistoryViewModel.getBankPricing('Bank');
+  }
+  
+  // Setup animation controller
+  animationController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 300),
+  );
+  
+  animation = CurvedAnimation(
+    parent: animationController!,
+    curve: Curves.easeInOut,
+  );
+  
+  // Get spot rate only if not already available
+  final productViewModel = context.read<ProductViewModel>();
+  if (productViewModel.goldSpotRate == null) {
+    productViewModel.getSpotRate();
+  }
+  
+  // Set up market data stream with proper subscription management
+  _marketDataSubscription = ProductService.marketDataStream.listen((marketData) {
+    // Store prices based on the symbol
+    String symbol = marketData['symbol'].toString().toLowerCase();
+
+    if (mounted) {
+      // Check if the widget is still mounted
+      if (symbol == 'gold') {
+        setState(() {
+          goldBid = (marketData['bid'] is int)
+              ? (marketData['bid'] as int).toDouble()
+              : marketData['bid'];
+        });
+      }
+    }
+  });
+  
+  // Check guest mode if needed, but only once
+  if (productViewModel.isGuest == null) {
+    productViewModel.checkGuestMode();
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -650,4 +672,12 @@ class _ProductViewState extends State<ProductView>
       ),
     );
   }
+
+  @override
+void dispose() {
+  // Clean up resources
+  _marketDataSubscription?.cancel();
+  animationController?.dispose();
+  super.dispose();
+}
 }
