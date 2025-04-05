@@ -70,7 +70,7 @@ class ProductService {
       var response = await client.get(
         Uri.parse(getSpotRateUrl),
         headers: {
-          'X-Secret-Key': 'IfiuH/ko+rh/gekRvY4Va0s+aGYuGJEAOkbJbChhcqo=',
+          'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'
         }, // Encoding payload to JSON
       );
@@ -123,7 +123,7 @@ class ProductService {
       var response = await client.get(
         Uri.parse('https://api.aurify.ae/user/get-server'),
         headers: {
-          'X-Secret-Key': 'IfiuH/ko+rh/gekRvY4Va0s+aGYuGJEAOkbJbChhcqo=',
+          'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'
         },
       );
@@ -206,35 +206,35 @@ class ProductService {
     }
   }
 
-    static Future<ProductModel?> listProducts(
-      Map<String, dynamic> payload) async {
-    try {
-      final url = listProductUrl.replaceFirst('{index}', payload['index']);
-      var response = await client.get(
-        Uri.parse(url),
-        headers: {
-          'X-Secret-Key': secreteKey,
-          'Content-Type': 'application/json'
-        },
-      );
+  //   static Future<ProductModel?> listProducts(
+  //     Map<String, dynamic> payload) async {
+  //   try {
+  //     final url = listProductUrl.replaceFirst('{index}', payload['index']);
+  //     var response = await client.get(
+  //       Uri.parse(url),
+  //       headers: {
+  //         'X-Secret-Key': secreteKey,
+  //         'Content-Type': 'application/json'
+  //       },
+  //     );
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = jsonDecode(response.body);
-        // log(responseData.toString());
+  //     if (response.statusCode == 200) {
+  //       Map<String, dynamic> responseData = jsonDecode(response.body);
+  //       // log(responseData.toString());
 
-        return ProductModel.fromJson(responseData);
-      } else {
-        // Map<String, dynamic> responseData = jsonDecode(response.body);
+  //       return ProductModel.fromJson(responseData);
+  //     } else {
+  //       // Map<String, dynamic> responseData = jsonDecode(response.body);
 
-        // log(responseData.toString());
+  //       // log(responseData.toString());
 
-        return null;
-      }
-    } catch (e) {
-      // log(e.toString());
-      return null;
-    }
-  }
+  //       return null;
+  //     }
+  //   } catch (e) {
+  //     // log(e.toString());
+  //     return null;
+  //   }
+  // }
 
   static Future<MessageModel?> fixPrice(Map<String, dynamic> payload) async {
     try {
@@ -276,7 +276,7 @@ class ProductService {
       
       var response = await client.post(Uri.parse(url),
           headers: {
-            'X-Secret-Key': 'IfiuH/ko+rh/gekRvY4Va0s+aGYuGJEAOkbJbChhcqo=',
+            'X-Secret-Key': secreteKey,
             'Content-Type': 'application/json'
           },
           body: jsonEncode(payload));

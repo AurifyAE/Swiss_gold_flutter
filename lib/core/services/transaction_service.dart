@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:swiss_gold/core/models/transaction_model.dart';
+import 'package:swiss_gold/core/services/secrete_key.dart';
 import 'package:swiss_gold/core/utils/endpoint.dart';
 
 class TransactionService {
@@ -12,7 +13,7 @@ class TransactionService {
         Uri.parse('$newBaseUrl/fetch-transtion/$userId?page=$page'),
         headers: {
           'Content-Type': 'application/json',
-          'x-secret-key': 'IfiuH/ko+rh/gekRvY4Va0s+=uucP3xwIfo0e8YTN1INF',
+          'x-secret-key': secreteKey,
         },
       );
 

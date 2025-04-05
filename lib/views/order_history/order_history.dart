@@ -295,9 +295,7 @@ class _OrderHistoryState extends State<OrderHistory> {
                                                       ),
                                                     ),
                                                     Text(
-                                                      'AED ${prod.item[index].product!.price}'
-                                                          .toString()
-                                                          .substring(0, 10),
+                                                      'AED ${prod.item[index].product?.price ?? 0}'.toString(),
                                                       style: TextStyle(
                                                         color: UIColor.gold,
                                                         fontSize: 16.sp,

@@ -20,7 +20,7 @@ class OrderHistoryService {
       var response = await client.get(
         Uri.parse(url),
         headers: {
-          'X-Secret-Key': 'IfiuH/ko+rh/gekRvY4Va0s+aGYuGJEAOkbJbChhcqo=',
+          'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'
         }, // Encoding payload to JSON
       );

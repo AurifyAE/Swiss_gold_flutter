@@ -19,7 +19,7 @@ class ProfileService {
     var response = await client.get(
       Uri.parse(url),
       headers: {
-        'X-Secret-Key': 'IfiuH/ko+rh/gekRvY4Va0s+=uucP3xwIfo0e8YTN1INF',
+        'X-Secret-Key': secreteKey,
         'Content-Type': 'application/json'
       },
     );

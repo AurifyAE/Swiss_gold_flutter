@@ -294,10 +294,11 @@ class ProductViewModel extends BaseModel {
     _initializeIds();
     checkGuestMode();
   }
+  
 
   Future<void> _initializeIds() async {
     try {
-      _adminId = '67586119baf55a80a8277f01';
+      _adminId = '67c1a8978399ea3181f5cad9';
       _categoryId = await LocalStorage.getString('categoryId') ?? '';
       
       log('Initialized ProductViewModel with adminId: $_adminId, categoryId: $_categoryId');
@@ -426,34 +427,34 @@ class ProductViewModel extends BaseModel {
   //   notifyListeners();
   // }
 
-  Future<void> listProducts(Map<String, dynamic> payload) async {
-    setState(ViewState.loading);
-    _productModel = await ProductService.listProducts(payload);
-    _productList.clear();
+  // Future<void> listProducts(Map<String, dynamic> payload) async {
+  //   setState(ViewState.loading);
+  //   _productModel = await ProductService.listProducts(payload);
+  //   _productList.clear();
 
-    if (_productModel != null) {
-      _productList.addAll(_productModel!.data);
-    }
+  //   if (_productModel != null) {
+  //     _productList.addAll(_productModel!.data);
+  //   }
 
-    setState(ViewState.idle);
-    notifyListeners();
-  }
+  //   setState(ViewState.idle);
+  //   notifyListeners();
+  // }
 
-  Future<void> loadMoreProducts(Map<String, dynamic> payload) async {
-    try {
-      if (_productModel!.page!.currentPage < _productModel!.page!.totalPage) {
-        setState(ViewState.loadingMore); // Optional: track loading more state
-        _productModel = await ProductService.listProducts(payload);
-        _productList.addAll(_productModel!.data);
-        setState(ViewState.idle); // Reset state
-        notifyListeners();
-      }
-    } catch (e) {
-      // log(e.toString());
-    } finally {
-      setState(ViewState.idle); // Reset state
-    }
-  }
+  // Future<void> loadMoreProducts(Map<String, dynamic> payload) async {
+  //   try {
+  //     if (_productModel!.page!.currentPage < _productModel!.page!.totalPage) {
+  //       setState(ViewState.loadingMore); // Optional: track loading more state
+  //       _productModel = await ProductService.listProducts(payload);
+  //       _productList.addAll(_productModel!.data);
+  //       setState(ViewState.idle); // Reset state
+  //       notifyListeners();
+  //     }
+  //   } catch (e) {
+  //     // log(e.toString());
+  //   } finally {
+  //     setState(ViewState.idle); // Reset state
+  //   }
+  // }
 
   // Simplified product fetch method with proper error handling
 //  class ProductViewModel extends BaseModel {
