@@ -4,7 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/navigate.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
-import 'package:swiss_gold/core/view_models/auth_view_model.dart';
+import 'package:swiss_gold/core/view_models/product_view_model.dart'; // Add this import
 import 'package:swiss_gold/views/order_history/order_history.dart';
 import 'package:swiss_gold/views/profile/profile_view.dart';
 import 'package:swiss_gold/views/transaction/transaction_view.dart';
@@ -31,9 +31,9 @@ class MoreView extends StatelessWidget {
       }
     }
 
-    return Consumer<AuthViewModel>(
-      builder: (context, authProvider, child) {
-        bool isGuestUser = authProvider.isGuest;
+    return Consumer<ProductViewModel>(
+      builder: (context, productProvider, child) {
+        bool isGuestUser = productProvider.isGuest ?? false;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
@@ -57,7 +57,7 @@ class MoreView extends StatelessWidget {
               ),
               SizedBox(height: 20.h),
 
-              // ✅ Conditionally show this button
+              // ✅ Conditionally show this button using ProductViewModel instead
               if (!isGuestUser) ...[
                 CustomOutlinedBtn(
                   borderRadius: 12.sp,
@@ -78,6 +78,7 @@ class MoreView extends StatelessWidget {
                 SizedBox(height: 20.h),
               ],
 
+              // Rest of your buttons remain the same
               CustomOutlinedBtn(
                 borderRadius: 12.sp,
                 borderColor: UIColor.gold,

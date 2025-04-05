@@ -276,7 +276,7 @@ class ProductService {
       
       var response = await client.post(Uri.parse(url),
           headers: {
-            'X-Secret-Key': secreteKey,
+            'X-Secret-Key': 'IfiuH/ko+rh/gekRvY4Va0s+aGYuGJEAOkbJbChhcqo=',
             'Content-Type': 'application/json'
           },
           body: jsonEncode(payload));

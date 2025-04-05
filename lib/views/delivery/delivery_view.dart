@@ -5,6 +5,7 @@ import 'package:swiss_gold/core/models/product_model.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 import 'package:swiss_gold/core/view_models/product_view_model.dart';
+import 'package:swiss_gold/core/services/server_provider.dart'; // Import GoldRateProvider
 
 class DeliveryDetailsView extends StatefulWidget {
   final Map<String, dynamic> orderData;
@@ -46,47 +47,57 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
     return totalWeight;
   }
 
-  // Calculate total amount for cash payment using product price directly
-  double calculateTotalAmount(ProductViewModel productViewModel) {
+  // Calculate total amount for cash payment using product price directly and GoldRateProvider for gold payment
+  double calculateTotalAmount(ProductViewModel productViewModel, GoldRateProvider goldRateProvider) {
     double totalAmount = 0.0;
     List bookingData = widget.orderData["bookingData"] as List;
-    
+
     for (var item in bookingData) {
       String productId = item["productId"];
       int quantity = item["quantity"] ?? 1;
-      
-      // Find product in product list by ID
+
       Product? product = productViewModel.productList.firstWhere(
         (p) => p.pId == productId,
         // orElse: () => null,
       );
-      
+
       if (product != null) {
-        // Use product price directly instead of calculating from gold rate
-        double productPrice = product.price.toDouble();
-        double makingCharge = product.makingCharge.toDouble();
-        
-        // Add product price + making charge
-        double productTotal = productPrice + makingCharge;
-        totalAmount += productTotal * quantity;
+        if (widget.orderData["paymentMethod"] == 'Gold') {
+          // 💰 Use gold bid rate from GoldRateProvider if available
+          double bidRate = 0.0;
+          if (goldRateProvider.goldData != null && goldRateProvider.goldData!.containsKey('bid')) {
+            bidRate = double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0;
+          }
+
+          if (bidRate > 0) {
+            // Calculate value based on weight and bid rate
+            totalAmount += product.weight * bidRate * quantity;
+          }
+        } else {
+          // 🏷️ Use regular price + making charge
+          double productPrice = product.price.toDouble();
+          double makingCharge = product.makingCharge.toDouble();
+          totalAmount += (productPrice + makingCharge) * quantity;
+        }
       }
     }
-    
-    // Apply discount/premium based on payment method
-    if (widget.orderData["paymentMethod"] != 'Gold' && 
+
+    // Apply discount if not gold
+    if (widget.orderData["paymentMethod"] != 'Gold' &&
         widget.orderData.containsKey('discount')) {
       String discountStr = widget.orderData['discount'] ?? '0';
       double discount = double.tryParse(discountStr) ?? 0.0;
       totalAmount -= discount;
     }
-    
-    if (widget.orderData["paymentMethod"] == 'Gold' && 
+
+    // Apply premium if gold
+    if (widget.orderData["paymentMethod"] == 'Gold' &&
         widget.orderData.containsKey('premium')) {
       String premiumStr = widget.orderData['premium'] ?? '0';
       double premium = double.tryParse(premiumStr) ?? 0.0;
       totalAmount += premium;
     }
-    
+
     return totalAmount > 0 ? totalAmount : 0.0;
   }
 
@@ -100,12 +111,31 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    
+    // Initialize GoldRateProvider connection on screen load if needed
+    Future.microtask(() {
+      final goldRateProvider = Provider.of<GoldRateProvider>(context, listen: false);
+      if (!goldRateProvider.isConnected || goldRateProvider.goldData == null) {
+        goldRateProvider.initializeConnection();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final productViewModel = Provider.of<ProductViewModel>(context);
+    // final liveRateProvider = Provider.of<LiveRateProvider>(context);
+    final goldRateProvider = Provider.of<GoldRateProvider>(context);
     
     final isGoldPayment = widget.orderData["paymentMethod"] == 'Gold';
     final totalWeight = calculateTotalWeight(productViewModel);
-    final totalAmount = calculateTotalAmount(productViewModel);
+    final totalAmount = calculateTotalAmount(productViewModel, goldRateProvider);
+    
+    // Get bid price from GoldRateProvider
+    final bidPrice = goldRateProvider.goldData != null ? 
+                     double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0 : 0.0;
     
     return Scaffold(
       appBar: AppBar(
@@ -173,6 +203,17 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      SizedBox(height: 8.h),
+                      // Display bid price from GoldRateProvider
+                      Text(
+                        'Bid Price: ${bidPrice.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: UIColor.gold,
+                          fontFamily: 'Familiar',
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 )
@@ -194,6 +235,17 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           color: UIColor.gold,
                           fontFamily: 'Familiar',
                           fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      // Replace LiveRateProvider with GoldRateProvider
+                      Text(
+                        'Live rate: ${bidPrice > 0 ? (bidPrice).toStringAsFixed(2) : "2592.97"}',
+                        style: TextStyle(
+                          color: UIColor.gold,
+                          fontFamily: 'Familiar',
+                          fontSize: 20.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -322,6 +374,30 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           ),
                         ],
                       ),
+                      // Add gold bid price
+                      SizedBox(height: 12.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Gold Bid Price:',
+                            style: TextStyle(
+                              color: UIColor.gold,
+                              fontFamily: 'Familiar',
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                          Text(
+                            bidPrice > 0 ? '${bidPrice.toStringAsFixed(2)}' : 'N/A',
+                            style: TextStyle(
+                              color: UIColor.gold,
+                              fontFamily: 'Familiar',
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                     
                     // Show total amount only for Cash payment
@@ -408,6 +484,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                 ),
               ),
               
+              // Rest of the code remains the same
               SizedBox(height: 24.h),
               
               // Product details section
@@ -605,7 +682,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ],
                           ),
                         ],
-                      ],
+                      ],                                
                     ),
                   );
                 },
@@ -658,6 +735,29 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               fontFamily: 'Familiar',
                               fontSize: 18.sp,
                               fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Add bid price row to summary
+                      SizedBox(height: 8.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'At Bid Price:',
+                            style: TextStyle(
+                              color: UIColor.gold,
+                              fontFamily: 'Familiar',
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                          Text(
+                            bidPrice > 0 ? '${bidPrice.toStringAsFixed(2)}' : 'N/A',
+                            style: TextStyle(
+                              color: UIColor.gold,
+                              fontFamily: 'Familiar',
+                              fontSize: 16.sp,
                             ),
                           ),
                         ],

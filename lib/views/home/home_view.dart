@@ -73,6 +73,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   }
 
   void processOrder(Map<String, dynamic> finalPayload) {
+    print(finalPayload);
     context
         .read<ProductViewModel>()
         .bookProducts(finalPayload)

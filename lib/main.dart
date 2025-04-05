@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:swiss_gold/core/global_variables.dart';
 import 'package:swiss_gold/core/services/fcm_service.dart';
+import 'package:swiss_gold/core/services/server_provider.dart';
 import 'package:swiss_gold/core/utils/theme.dart';
 import 'package:swiss_gold/core/view_models/auth_view_model.dart';
 import 'package:swiss_gold/core/view_models/cart_view_model.dart';
@@ -13,6 +14,7 @@ import 'package:swiss_gold/core/view_models/profile_view_model.dart';
 import 'package:swiss_gold/core/view_models/transaction_view_model.dart';
 import 'package:swiss_gold/core/view_models/wishlist_view_model.dart';
 import 'package:swiss_gold/firebase_options.dart';
+import 'package:swiss_gold/test.dart';
 import 'package:swiss_gold/views/splash/splash_view.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -45,7 +47,9 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (context) => WishlistViewModel()),
           ChangeNotifierProvider(create: (context) => CompanyProfileViewModel()),
           ChangeNotifierProvider(create: (context) => OrderHistoryViewModel()),
-          ChangeNotifierProvider(create: (context) => TransactionViewModel())
+          ChangeNotifierProvider(create: (context) => TransactionViewModel()),
+          // ChangeNotifierProvider(create: (context) => LiveRateProvider()),
+          ChangeNotifierProvider(create: (context) => GoldRateProvider()),
 
 
           ],
@@ -55,7 +59,7 @@ class MyApp extends StatelessWidget {
           theme: CustomTheme.theme,
                     scaffoldMessengerKey: scaffoldMessengerKey,
         
-          home: SplashView(),
+          home: SplashView()
         ),
       ),
     );

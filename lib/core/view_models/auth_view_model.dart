@@ -33,7 +33,7 @@ class AuthViewModel extends BaseModel {
 
   bool get isGuest => _isGuest;
 
-  Future<void> checkGuestMode() async {
+ Future<void> checkGuestMode() async {
     try {
       _isGuest = await LocalStorage.getBool('isGuest') ?? false;
       log('Guest mode: $_isGuest');
