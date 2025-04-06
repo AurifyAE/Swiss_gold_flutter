@@ -24,9 +24,6 @@ class DeliveryDetailsView extends StatefulWidget {
 }
 
 class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
-  // Helper method to format numbers with commas
-
-
   // Calculate total weight from booking data with real product weights
   double calculateTotalWeight(ProductViewModel productViewModel) {
     double totalWeight = 0.0;
@@ -52,10 +49,15 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
     return totalWeight;
   }
 
-  // Calculate total amount for cash payment using product price directly and GoldRateProvider for gold payment
+  // Calculate total amount using the new formula: (bidprice * purity * weight)
   double calculateTotalAmount(ProductViewModel productViewModel, GoldRateProvider goldRateProvider) {
     double totalAmount = 0.0;
     List bookingData = widget.orderData["bookingData"] as List;
+    
+    // Get bid price from GoldRateProvider
+    double bidPrice = goldRateProvider.goldData != null 
+      ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) / 31.103 * 3.674 
+      : 0.0;
 
     for (var item in bookingData) {
       String productId = item["productId"];
@@ -67,40 +69,37 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
       );
 
       if (product != null) {
-        if (widget.orderData["paymentMethod"] == 'Gold') {
-          // 💰 Use gold bid rate from GoldRateProvider if available
-          double bidRate = 0.0;
-          if (goldRateProvider.goldData != null && goldRateProvider.goldData!.containsKey('bid')) {
-            bidRate = double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0;
-          }
-
-          if (bidRate > 0) {
-            // Calculate value based on weight and bid rate
-            totalAmount += product.weight * bidRate * quantity;
-          }
-        } else {
-          // 🏷️ Use regular price + making charge
-          double productPrice = product.price.toDouble();
-          double makingCharge = product.makingCharge.toDouble();
-          totalAmount += (productPrice + makingCharge) * quantity;
+        double productPrice = 0.0;
+        // Use the new formula: (bidprice * purity * weight)
+        productPrice = bidPrice * (product.purity.toDouble() / 100) * product.weight.toDouble();
+        
+        // Add making charge if applicable
+        double makingCharge = product.makingCharge.toDouble();
+        
+        // Calculate the total for this product
+        double productTotal = productPrice * quantity;
+        
+        // Add making charge to the total if it exists
+        if (makingCharge > 0) {
+          productTotal += makingCharge * quantity;
         }
+        
+        totalAmount += productTotal;
       }
     }
 
-    // Apply discount if not gold
-    if (widget.orderData["paymentMethod"] != 'Gold' &&
-        widget.orderData.containsKey('discount')) {
-      String discountStr = widget.orderData['discount'] ?? '0';
-      double discount = double.tryParse(discountStr) ?? 0.0;
-      totalAmount -= discount;
-    }
-
-    // Apply premium if gold
-    if (widget.orderData["paymentMethod"] == 'Gold' &&
-        widget.orderData.containsKey('premium')) {
+    // Apply sell premium if applicable
+    if (widget.orderData.containsKey('premium')) {
       String premiumStr = widget.orderData['premium'] ?? '0';
       double premium = double.tryParse(premiumStr) ?? 0.0;
       totalAmount += premium;
+    }
+    
+    // Apply discount if applicable
+    if (widget.orderData.containsKey('discount')) {
+      String discountStr = widget.orderData['discount'] ?? '0';
+      double discount = double.tryParse(discountStr) ?? 0.0;
+      totalAmount -= discount;
     }
 
     return totalAmount > 0 ? totalAmount : 0.0;
@@ -131,7 +130,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
   @override
   Widget build(BuildContext context) {
     final productViewModel = Provider.of<ProductViewModel>(context);
-    // final liveRateProvider = Provider.of<LiveRateProvider>(context);
     final goldRateProvider = Provider.of<GoldRateProvider>(context);
     
     final isGoldPayment = widget.orderData["paymentMethod"] == 'Gold';
@@ -139,8 +137,9 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
     final totalAmount = calculateTotalAmount(productViewModel, goldRateProvider);
     
     // Get bid price from GoldRateProvider
-    final bidPrice = goldRateProvider.goldData != null ? 
-                     double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0 : 0.0;
+    final bidPrice = goldRateProvider.goldData != null 
+      ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) / 31.103 * 3.674 
+      : 0.0;
     
     return Scaffold(
       appBar: AppBar(
@@ -244,7 +243,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         ),
                       ),
                       SizedBox(height: 8.h),
-                      // Replace LiveRateProvider with GoldRateProvider
                       Text(
                         'Live rate: ${bidPrice > 0 ? formatNumber(bidPrice) : "2,592.97"}',
                         style: TextStyle(
@@ -433,7 +431,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                     ],
                     
                     // Show any applicable discount for cash payment
-                    if (!isGoldPayment && widget.orderData.containsKey('discount')) ...[
+                    if (widget.orderData.containsKey('discount')) ...[
                       SizedBox(height: 12.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -461,7 +459,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                     ],
                     
                     // Show any applicable premium for gold payment
-                    if (isGoldPayment && widget.orderData.containsKey('premium')) ...[
+                    if (widget.orderData.containsKey('premium')) ...[
                       SizedBox(height: 12.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -491,7 +489,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                 ),
               ),
               
-              // Rest of the code remains the same
               SizedBox(height: 24.h),
               
               // Product details section
@@ -519,12 +516,13 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   // Get actual product info
                   final product = getProductById(productId, productViewModel);
                   final productWeight = product?.weight.toDouble() ?? 0.0;
-                  final productPrice = product?.price.toDouble() ?? 0.0;
+                  final productPurity = product?.purity.toDouble() ?? 0.0;
                   final makingCharge = product?.makingCharge.toDouble() ?? 0.0;
                   final productTitle = product?.title ?? 'Product #$productId';
                   
-                  // Calculate cost using product price directly
-                  final itemValue = (productPrice * quantity) + (makingCharge * quantity);
+                  // Calculate price using new formula: (bidprice * purity * weight)
+                  final basePrice = bidPrice * (productPurity / 100) * productWeight;
+                  final itemValue = (basePrice * quantity) + (makingCharge * quantity);
                   
                   return Container(
                     margin: EdgeInsets.only(bottom: 10.h),
@@ -597,6 +595,28 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
+                              'Purity:',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontFamily: 'Familiar',
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                            Text(
+                              '${formatNumber(productPurity)}%',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontFamily: 'Familiar',
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 4.h),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
                               'Total Weight:',
                               style: TextStyle(
                                 color: UIColor.gold,
@@ -615,7 +635,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ],
                         ),
-                        // Show unit price from product model
+                        // Show unit price calculated with the new formula
                         SizedBox(height: 4.h),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -629,7 +649,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               ),
                             ),
                             Text(
-                              'AED ${formatNumber(productPrice)}',
+                              'AED ${formatNumber(basePrice)}',
                               style: TextStyle(
                                 color: UIColor.gold,
                                 fontFamily: 'Familiar',
@@ -663,32 +683,30 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ],
                           ),
                         ],
-                        // Show per-item cash value only for Cash payment
-                        if (!isGoldPayment) ...[
-                          SizedBox(height: 4.h),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Item Value:',
-                                style: TextStyle(
-                                  color: UIColor.gold,
-                                  fontFamily: 'Familiar',
-                                  fontSize: 14.sp,
-                                ),
+                        // Show item value
+                        SizedBox(height: 4.h),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Item Value:',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontFamily: 'Familiar',
+                                fontSize: 14.sp,
                               ),
-                              Text(
-                                'AED ${formatNumber(itemValue)}',
-                                style: TextStyle(
-                                  color: UIColor.gold,
-                                  fontFamily: 'Familiar',
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            ),
+                            Text(
+                              'AED ${formatNumber(itemValue)}',
+                              style: TextStyle(
+                                color: UIColor.gold,
+                                fontFamily: 'Familiar',
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ],                                
                     ),
                   );

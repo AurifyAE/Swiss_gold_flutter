@@ -129,14 +129,14 @@ class GoldRateProvider extends ChangeNotifier {
         
         _goldData = processedData;
         
-        // Log gold data details
-        log('Gold Rate Details:');
-        log('Bid: ${_goldData!['bid'] ?? 'N/A'}');
-        log('Ask: ${_goldData!['ask'] ?? 'N/A'}');
-        log('High: ${_goldData!['high'] ?? 'N/A'}');
-        log('Low: ${_goldData!['low'] ?? 'N/A'}');
-        log('Symbol: ${_goldData!['symbol'] ?? 'N/A'}');
-        log('Last Updated: ${_goldData!['timestamp'] ?? 'N/A'}');
+        // // Log gold data details
+        // log('Gold Rate Details:');
+        // log('Bid: ${_goldData!['bid'] ?? 'N/A'}');
+        // log('Ask: ${_goldData!['ask'] ?? 'N/A'}');
+        // log('High: ${_goldData!['high'] ?? 'N/A'}');
+        // log('Low: ${_goldData!['low'] ?? 'N/A'}');
+        // log('Symbol: ${_goldData!['symbol'] ?? 'N/A'}');
+        // log('Last Updated: ${_goldData!['timestamp'] ?? 'N/A'}');
         
         notifyListeners();
       }
