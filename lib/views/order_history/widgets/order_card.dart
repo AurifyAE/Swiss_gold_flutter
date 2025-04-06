@@ -9,7 +9,8 @@ class OrderCard extends StatelessWidget {
   final String status;
   final Function()? onTap;
   final String transactionId;
-  final String deliveryDate;
+  // final String deliveryDate;
+  final String orderDate;
   final void Function()? onRemoveTapped;
   final Widget child;
   final String paymentMethod;
@@ -32,14 +33,14 @@ class OrderCard extends StatelessWidget {
     required this.totalPrice,
     required this.icon,
     required this.transactionId,
-    required this.deliveryDate,
+    required this.orderDate,
     required this.expanded,
     required this.child, this.pricingOption, this.discountAmount, this.premiumAmount,
   });
 
   @override
   Widget build(BuildContext context) {
-    int index = deliveryDate.indexOf('T');
+    int index = orderDate.indexOf('T');
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -103,7 +104,7 @@ class OrderCard extends StatelessWidget {
                               child: Text(
                                 status,
                                 style: TextStyle(
-                                  color: UIColor.white,
+                                  color: UIColor.black, 
                                   fontSize: 9.sp,
                                   fontFamily: 'Familiar',
                                 ),
@@ -259,7 +260,7 @@ class OrderCard extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              'Delivery date :',
+                              'Odered date :',
                               style: TextStyle(
                                 color: UIColor.gold,
                                 fontSize: 16.sp,
@@ -270,7 +271,8 @@ class OrderCard extends StatelessWidget {
                               width: 10.w,
                             ),
                             Text(
-                              deliveryDate.substring(0, index),
+                               orderDate.substring(0,index) ,
+                              // orderda.substring(0, index),
                               style: TextStyle(
                                 color: UIColor.gold,
                                 fontSize: 16.sp,

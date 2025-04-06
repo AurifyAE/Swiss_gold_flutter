@@ -43,6 +43,7 @@ class CustomCard extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
           child: Column(
+            spacing: 20,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Center(
@@ -60,9 +61,9 @@ class CustomCard extends StatelessWidget {
               //         width: 100.w,
               //       )),
               // ),
-              SizedBox(
-                height: 20.h,
-              ),
+              // SizedBox(
+              //   height: 20.h,
+              // ),
               Text(
                 title,
                 overflow: TextOverflow.visible,
@@ -74,9 +75,9 @@ class CustomCard extends StatelessWidget {
                     fontWeight: FontWeight.bold),
               ),
 
-              SizedBox(
-                height: 20.h,
-              ),
+              // SizedBox(
+              //   height: 20.h,
+              // ),
 
               // RichText(
               //   text: TextSpan(
@@ -105,9 +106,10 @@ class CustomCard extends StatelessWidget {
               //     ],
               //   ),
               // ),
-              Spacer(),
+              // Spacer(),
 
               Row(
+                spacing: 20,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   GestureDetector(
@@ -121,9 +123,9 @@ class CustomCard extends StatelessWidget {
                           size: 25.sp,
                         )),
                   ),
-                  SizedBox(
-                    width: 10.w,
-                  ),
+                  // SizedBox(
+                  //   width: 10.w,
+                  // ),
                   Text(
                     quantity.toString(),
                     style: TextStyle(
@@ -131,9 +133,9 @@ class CustomCard extends StatelessWidget {
                       fontSize: 26.sp,
                     ),
                   ),
-                  SizedBox(
-                    width: 10.w,
-                  ),
+                  // SizedBox(
+                  //   width: 10.w,
+                  // ),
                   GestureDetector(
                     
                     onTap: onIncrement,
@@ -145,12 +147,12 @@ class CustomCard extends StatelessWidget {
                           color: UIColor.black,
                           size: 25.sp,
                         )),
-                  ),
+                  ), 
                 ],
               ),
-              SizedBox(
-                height: 10.h,
-              ),
+              // SizedBox(
+              //   height: 10.h,
+              // ),
               // GestureDetector(
               //   onTap: onAddToCart,
               //   child: Container(

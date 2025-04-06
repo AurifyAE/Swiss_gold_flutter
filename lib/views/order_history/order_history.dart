@@ -22,58 +22,11 @@ class OrderHistory extends StatefulWidget {
 }
 
 class _OrderHistoryState extends State<OrderHistory> {
-  String query = '';
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final model = context.read<OrderHistoryViewModel>();
-      model.checkGuestMode().then((_) {
-        filterHistory();
-        scrollController.addListener(() {
-          if (scrollController.position.pixels ==
-              scrollController.position.maxScrollExtent) {
-            if (currentIndex < (model.orderModel?.pagination?.totalPage ?? 0)) {
-              final model = context.read<OrderHistoryViewModel>();
-              model.getMoreOrderHistory(
-                  currentPage.toString(), query.toString());
-              // if (query != null) {
-              //   filteredOrders = model.allOrders
-              //       .where((data) => data.orderStatus == query)
-              //       .toList();
-              // } else {
-              //   filteredOrders = model.allOrders.toList();
-              // }
-              currentPage++;
-            }
-          }
-        });
-      });
-    });
-  }
-
-  List<OrderData> filteredOrders = [];
-
-  void filterHistory() async {
-    final model = context.read<OrderHistoryViewModel>();
-    await model.getOrderHistory('1', query);
-    // if (query != null) {
-    //   filteredOrders =
-    //       model.allOrders.where((data) => data.orderStatus == query).toList();
-    // } else {
-    //   filteredOrders = model.allOrders.toList();
-    // }
-    // final uniqueOrders = <String, OrderData>{};
-    // for (var order in filteredOrders) {
-    //   uniqueOrders[order.transactionId] = order; // Keeps the last occurrence
-    // }
-    // filteredOrders = uniqueOrders.values.toList();
-  }
-
-  bool isExpanded = false;
+  String query = 'All';
   int currentIndex = 0;
   int currentPage = 1;
   int selectedFilterIndex = 0;
+  bool isExpanded = false;
   ScrollController scrollController = ScrollController();
   List<String> filters = [
     "All",
@@ -84,6 +37,34 @@ class _OrderHistoryState extends State<OrderHistory> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final model = context.read<OrderHistoryViewModel>();
+      model.checkGuestMode().then((_) {
+        _loadOrders();
+        
+        scrollController.addListener(() {
+          if (scrollController.position.pixels ==
+              scrollController.position.maxScrollExtent) {
+            final model = context.read<OrderHistoryViewModel>();
+            if (currentPage < (model.orderModel?.pagination?.totalPage ?? 0)) {
+              currentPage++;
+              log('Loading more orders, page: $currentPage');
+              model.getMoreOrderHistory(currentPage.toString(), query);
+            }
+          }
+        });
+      });
+    });
+  }
+
+  void _loadOrders() {
+    final model = context.read<OrderHistoryViewModel>();
+    model.getOrderHistory('1', query);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -92,29 +73,6 @@ class _OrderHistoryState extends State<OrderHistory> {
         flexibleSpace: SafeArea(
           child: Column(
             children: [
-              // Row(
-              //   children: [
-              //     IconButton(
-              //         onPressed: () {
-              //           Navigator.pop(context);
-              //         },
-              //         icon: Icon(
-              //           Icons.arrow_back,
-              //           color: UIColor.gold,
-              //         )),
-              //     Text(
-              //       'Order History',
-              //       style: TextStyle(
-              //         color: UIColor.gold,
-              //         fontSize: 20.sp,
-              //         fontFamily: 'Familiar',
-              //       ),
-              //     ),
-              //   ],
-              // ),
-              // SizedBox(
-              //   height: 10.h,
-              // ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: SingleChildScrollView(
@@ -122,52 +80,35 @@ class _OrderHistoryState extends State<OrderHistory> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(
-                        filters.length,
-                        (index) => Padding(
-                              padding: EdgeInsets.only(right: 10.w),
-                              child: CustomOutlinedBtn(
-                                  borderRadius: 8.sp,
-                                  onTapped: () {
-                                    currentPage = 1;
-                                    setState(() {
-                                      selectedFilterIndex = index;
-                                    });
-                                    if (selectedFilterIndex == 0) {
-                                    
-                                      query = '';
-                                        filterHistory();
-                                    } else if (selectedFilterIndex == 1) {
-                                     
-                                      query = 'User Approval Pending';
-                                       filterHistory();
-                                    } else if (selectedFilterIndex == 2) {
-                                    
-                                      query = 'Processing';
-                                        filterHistory();
-                                    } else if (selectedFilterIndex == 3) {
-                                     
-                                      query = 'Success';
-                                       filterHistory();
-                                    } else {
-                                     
-                                      query = 'Rejected';
-                                       filterHistory();
-                                    }
-                                    log(query);
-                                  },
-                                  btnText: filters[index],
-                                  btnTextColor: selectedFilterIndex == index
-                                      ? UIColor.black
-                                      : UIColor.gold,
-                                  bgColor: selectedFilterIndex == index
-                                      ? UIColor.gold
-                                      : UIColor.black,
-                                  borderColor: selectedFilterIndex == index
-                                      ? UIColor.gold
-                                      : UIColor.gold,
-                                  padH: 8.w,
-                                  padV: 5),
-                            )),
+                      filters.length,
+                      (index) => Padding(
+                        padding: EdgeInsets.only(right: 10.w),
+                        child: CustomOutlinedBtn(
+                          borderRadius: 8.sp,
+                          onTapped: () {
+                            setState(() {
+                              selectedFilterIndex = index;
+                              currentPage = 1;
+                              query = filters[index];
+                            });
+                            _loadOrders();
+                            log('Selected filter: $query');
+                          },
+                          btnText: filters[index],
+                          btnTextColor: selectedFilterIndex == index
+                              ? UIColor.black
+                              : UIColor.gold,
+                          bgColor: selectedFilterIndex == index
+                              ? UIColor.gold
+                              : UIColor.black,
+                          borderColor: selectedFilterIndex == index
+                              ? UIColor.gold
+                              : UIColor.gold,
+                          padH: 8.w,
+                          padV: 5,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -175,127 +116,133 @@ class _OrderHistoryState extends State<OrderHistory> {
           ),
         ),
       ),
-      body: Consumer<OrderHistoryViewModel>(builder: (context, model, child) {
-        if (model.state == ViewState.loading) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: UIColor.gold,
-            ),
-          );
-        } else if (model.isGuest == true) {
-          return Center(
-            child: CustomOutlinedBtn(
-              borderRadius: 22.sp,
-              borderColor: UIColor.gold,
-              padH: 10.w,
-              padV: 10.h,
-              width: 200.w,
-              btnText: 'Login',
-              btnTextColor: UIColor.gold,
-              fontSize: 22.sp,
-              onTapped: () {
-                navigateTo(context, LoginView());
-              },
-            ),
-          );
-        } else if (model.allOrders.isEmpty) {
-          return Center(
-            child: Text(
-              'No history',
-              style: TextStyle(
+      body: Consumer<OrderHistoryViewModel>(
+        builder: (context, model, child) {
+          if (model.state == ViewState.loading) {
+            return Center(
+              child: CircularProgressIndicator(
                 color: UIColor.gold,
-                fontSize: 16.sp,
-                fontFamily: 'Familiar',
               ),
-            ),
-          );
-        } else {
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            child: SingleChildScrollView(
-              controller: scrollController,
-              child: Column(
-                children: [
-                  ListView.builder(
+            );
+          } else if (model.isGuest == true) {
+            return Center(
+              child: CustomOutlinedBtn(
+                borderRadius: 22.sp,
+                borderColor: UIColor.gold,
+                padH: 10.w,
+                padV: 10.h,
+                width: 200.w,
+                btnText: 'Login',
+                btnTextColor: UIColor.gold,
+                fontSize: 22.sp,
+                onTapped: () {
+                  navigateTo(context, LoginView());
+                },
+              ),
+            );
+          } else if (model.allOrders.isEmpty) {
+            return Center(
+              child: Text(
+                'No orders found',
+                style: TextStyle(
+                  color: UIColor.gold,
+                  fontSize: 16.sp,
+                  fontFamily: 'Familiar',
+                ),
+              ),
+            );
+          } else {
+            return Padding(
+              padding: EdgeInsets.only(top: 0.h, left: 16.w, right: 16.w),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Column(
+                  children: [
+                    ListView.builder(
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
                       itemCount: model.allOrders.length,
                       itemBuilder: (context, index) {
-                        final prod = model.allOrders[index];
-
-                        return OrderCard(
-                          status: prod.orderStatus,
-                          totalPrice: prod.totalPrice,
-                          orderRemark: prod.orderRemark,
-                          paymentMethod: prod.paymentMethod,
-                          transactionId: prod.transactionId,
+                        final order = model.allOrders[index];
                         
-                          deliveryDate: prod.deliveryDate,
-                          pricingOption: prod.pricingOption!=null? prod.pricingOption:null,
-                          premiumAmount: prod.premiumAmount!=0?prod.premiumAmount.toString():null,
-                          discountAmount: prod.discountAmount!=0?prod.discountAmount.toString():null,
-
+                        return OrderCard(
+                          status: order.orderStatus,
+                          totalPrice: order.totalPrice,
+                          orderRemark: order.orderRemark,
+                          paymentMethod: order.paymentMethod,
+                          transactionId: order.transactionId,
+                          orderDate: order.orderDate,
+                          pricingOption: order.pricingOption,
+                          premiumAmount: order.premiumAmount != 0
+                              ? order.premiumAmount.toString()
+                              : null,
+                          discountAmount: order.discountAmount != 0
+                              ? order.discountAmount.toString()
+                              : null,
                           expanded: isExpanded && currentIndex == index,
-                          icon: isExpanded
+                          icon: isExpanded && currentIndex == index
                               ? Icons.arrow_drop_up
                               : Icons.arrow_drop_down_outlined,
                           onTap: () {
                             setState(() {
-                              isExpanded = !isExpanded;
+                              isExpanded = currentIndex == index ? !isExpanded : true;
                               currentIndex = index;
                             });
                           },
                           child: AnimatedContainer(
-                            duration: Duration(
-                              seconds: 1,
-                            ),
+                            duration: Duration(milliseconds: 300),
                             child: isExpanded && currentIndex == index
                                 ? SizedBox(
                                     width: MediaQuery.of(context).size.width,
                                     child: ListView.builder(
-                                        shrinkWrap: true,
-                                        itemCount: prod.item.length,
-                                        itemBuilder: (context, index) {
-                                          return Container(
-                                            margin: EdgeInsets.only(
-                                                bottom: 10.h, top: 20.h),
-                                            child: Row(
-                                              children: [
-                                                ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12.sp),
-                                                    child: CachedNetworkImage(
-                                                      imageUrl: prod.item[index]
-                                                          .product!.images[0],
+                                      shrinkWrap: true,
+                                      itemCount: order.item.length,
+                                      itemBuilder: (context, itemIndex) {
+                                        final item = order.item[itemIndex];
+                                        return Container(
+                                          margin: EdgeInsets.only(
+                                            bottom: 10.h,
+                                            top: 20.h, 
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(12.sp),
+                                                child: CachedNetworkImage(
+                                                  imageUrl: item.product?.images.isNotEmpty == true
+                                                      ? item.product!.images[0]
+                                                      : '',
+                                                  width: 50.w,
+                                                  height: 50.w,
+                                                  fit: BoxFit.cover,
+                                                  errorWidget: (context, url, error) {
+                                                    return Image.asset(
+                                                      ImageAssets.prod,
                                                       width: 80.w,
-                                                      errorWidget: (context,
-                                                          url, error) {
-                                                        return Image.asset(
-                                                          ImageAssets.prod,
-                                                          width: 80.w,
-                                                          height: 40.h,
-                                                        );
-                                                      },
-                                                    )),
-                                                SizedBox(
-                                                  width: 20.w,
+                                                      height: 80.w,
+                                                      fit: BoxFit.cover,
+                                                    );
+                                                  },
                                                 ),
-                                                Column(
+                                              ),
+                                              SizedBox(width: 20.w),
+                                              Expanded(
+                                                child: Column(
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      prod.item[index].product!
-                                                          .title,
+                                                      item.product?.title ?? 'Product',
                                                       style: TextStyle(
                                                         color: UIColor.gold,
                                                         fontSize: 16.sp,
                                                         fontFamily: 'Familiar',
+                                                        fontWeight: FontWeight.bold,
                                                       ),
                                                     ),
                                                     Text(
-                                                      'AED ${prod.item[index].product?.price ?? 0}'.toString(),
+                                                      'AED ${item.product?.price ?? 0}',
                                                       style: TextStyle(
                                                         color: UIColor.gold,
                                                         fontSize: 16.sp,
@@ -305,71 +252,52 @@ class _OrderHistoryState extends State<OrderHistory> {
                                                     Row(
                                                       children: [
                                                         Text(
-                                                          'Quantity :',
+                                                          'Quantity:',
                                                           style: TextStyle(
                                                             color: UIColor.gold,
                                                             fontSize: 16.sp,
-                                                            fontFamily:
-                                                                'Familiar',
+                                                            fontFamily: 'Familiar',
                                                           ),
                                                         ),
-                                                        SizedBox(
-                                                          width: 10.w,
-                                                        ),
+                                                        SizedBox(width: 10.w),
                                                         Text(
-                                                          prod.item[index]
-                                                              .quantity
-                                                              .toString(),
+                                                          item.quantity.toString(),
                                                           style: TextStyle(
                                                             color: UIColor.gold,
                                                             fontSize: 16.sp,
-                                                            fontFamily:
-                                                                'Familiar',
+                                                            fontFamily: 'Familiar',
                                                           ),
                                                         ),
                                                       ],
                                                     ),
-                                                    if (prod.item[index]
-                                                            .status ==
-                                                        'Rejected')
+                                                    if (item.status == 'Rejected')
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            'Reason :',
+                                                            'Status:',
                                                             style: TextStyle(
-                                                              color:
-                                                                  UIColor.gold,
+                                                              color: UIColor.gold,
                                                               fontSize: 16.sp,
-                                                              fontFamily:
-                                                                  'Familiar',
+                                                              fontFamily: 'Familiar',
                                                             ),
                                                           ),
-                                                          SizedBox(
-                                                            width: 10.w,
-                                                          ),
+                                                          SizedBox(width: 10.w),
                                                           Container(
-                                                            padding: EdgeInsets
-                                                                .symmetric(
-                                                                    horizontal:
-                                                                        5.w,
-                                                                    vertical:
-                                                                        1.h),
+                                                            padding: EdgeInsets.symmetric(
+                                                              horizontal: 5.w,
+                                                              vertical: 1.h,
+                                                            ),
                                                             decoration: BoxDecoration(
-                                                                color:
-                                                                    Colors.red,
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            5.sp)),
+                                                              color: Colors.red,
+                                                              borderRadius:
+                                                                  BorderRadius.circular(5.sp),
+                                                            ),
                                                             child: Text(
-                                                              prod.item[index]
-                                                                  .status,
+                                                              item.status,
                                                               style: TextStyle(
-                                                                color: UIColor
-                                                                    .white,
+                                                                color: UIColor.white,
                                                                 fontSize: 9.sp,
-                                                                fontFamily:
-                                                                    'Familiar',
+                                                                fontFamily: 'Familiar',
                                                               ),
                                                             ),
                                                           ),
@@ -377,53 +305,73 @@ class _OrderHistoryState extends State<OrderHistory> {
                                                       ),
                                                   ],
                                                 ),
-                                                Spacer(),
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      '${prod.item[index].product!.weight.toString()} g',
-                                                      style: TextStyle(
-                                                        color: UIColor.gold,
-                                                        fontSize: 16.sp,
-                                                        fontFamily: 'Familiar',
-                                                      ),
+                                              ),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    '${item.product?.weight ?? 0} g',
+                                                    style: TextStyle(
+                                                      color: UIColor.gold,
+                                                      fontSize: 16.sp,
+                                                      fontFamily: 'Familiar',
                                                     ),
-                                                    Text(
-                                                      prod.item[index].product!
-                                                          .purity
-                                                          .toString(),
-                                                      style: TextStyle(
-                                                        color: UIColor.gold,
-                                                        fontSize: 16.sp,
-                                                        fontFamily: 'Familiar',
+                                                  ),
+                                                  Row(
+                                                    spacing: 10,
+                                                    children: [
+                                                      Text(
+                                                        'Purity',
+                                                        style: TextStyle(
+                                                          color: UIColor.gold,
+                                                          fontSize: 16.sp,
+                                                          fontFamily: 'Familiar',
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ],
-                                                )
-                                              ],
-                                            ),
-                                          );
-                                        }),
+                                                      Text(
+                                                        '${item.product?.purity ?? 0}K',
+                                                        style: TextStyle(
+                                                          color: UIColor.gold,
+                                                          fontSize: 16.sp,
+                                                          fontFamily: 'Familiar',
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   )
                                 : null,
                           ),
                         );
-                      }),
-                  model.state == ViewState.loadingMore
-                      ? Center(
-                          child: CircularProgressIndicator(
-                            color: UIColor.gold,
-                          ),
-                        )
-                      : SizedBox.shrink()
-                ],
+                      },
+                    ),
+                    if (model.state == ViewState.loadingMore)
+                      Padding(
+                        padding: EdgeInsets.all(16.h),
+                        child: CircularProgressIndicator(
+                          color: UIColor.gold,
+                        ),
+                      ),
+                    SizedBox(height: 20.h),
+                  ],
+                ),
               ),
-            ),
-          );
-        }
-      }),
+            );
+          }
+        },
+      ),
     );
+  }
+  
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
   }
 }

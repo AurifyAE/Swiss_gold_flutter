@@ -14,7 +14,7 @@ class OrderHistoryViewModel extends BaseModel {
   PricingMethodModel? _bankPricingModel;
   PricingMethodModel? get bankPricingModel => _bankPricingModel;
 
-   PricingMethodModel? _cashPricingModel;
+  PricingMethodModel? _cashPricingModel;
   PricingMethodModel? get cashPricingModel => _cashPricingModel;
 
   ViewState? _moreHistoryState;
@@ -26,40 +26,58 @@ class OrderHistoryViewModel extends BaseModel {
   bool? _isGuest;
   bool? get isGuest => _isGuest;
 
-  Future<void> getOrderHistory(String index,String status) async {
+  // Map for converting filter text to API status parameter
+  Map<String, String> statusMapping = {
+    'All': '',
+    'User Approval Pending': 'User Approval Pending',
+    'Processing': 'Processing',
+    'Success': 'Success',
+    'Rejected': 'Rejected'
+  };
+
+  Future<void> getOrderHistory(String page, String status) async {
     setState(ViewState.loading);
     _allOrders.clear();
-    _orderModel = await OrderHistoryService.getOrderHistory(index,status);
-    if (_orderModel != null) {
+    
+    String apiStatus = statusMapping[status] ?? '';
+    log('Fetching orders with status: $apiStatus');
+    
+    _orderModel = await OrderHistoryService.getOrderHistory(page, apiStatus);
+    
+    if (_orderModel != null && _orderModel!.data.isNotEmpty) {
       _allOrders.addAll(_orderModel!.data);
+      log('Fetched ${_allOrders.length} orders');
+    } else {
+      log('No orders fetched or null response');
     }
+    
     setState(ViewState.idle);
     notifyListeners();
   }
 
-  Future<void> getMoreOrderHistory(String index,String status) async {
+  Future<void> getMoreOrderHistory(String page, String status) async {
     setState(ViewState.loadingMore);
-
-    _orderModel = await OrderHistoryService.getOrderHistory(index,status);
-    _allOrders.addAll(_orderModel!.data);
+    
+    String apiStatus = statusMapping[status] ?? '';
+    _orderModel = await OrderHistoryService.getOrderHistory(page, apiStatus);
+    
+    if (_orderModel != null && _orderModel!.data.isNotEmpty) {
+      _allOrders.addAll(_orderModel!.data);
+      log('Added ${_orderModel!.data.length} more orders. Total: ${_allOrders.length}');
+    }
+    
     setState(ViewState.idle);
     notifyListeners();
   }
 
   Future<void> getBankPricing(String type) async {
     _bankPricingModel = await OrderHistoryService.getPricing(type);
-
     notifyListeners();
-
-  
   }
 
-    Future<void> getCashPricing(String type) async {
+  Future<void> getCashPricing(String type) async {
     _cashPricingModel = await OrderHistoryService.getPricing(type);
-
     notifyListeners();
-
- 
   }
 
   Future<void> checkGuestMode() async {

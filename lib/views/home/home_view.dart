@@ -413,7 +413,7 @@ void _loadMoreProducts() {
                         physics: NeverScrollableScrollPhysics(),
                         itemCount: 6,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
+                            crossAxisCount: 2,   
                             mainAxisSpacing: 16.h,
                             crossAxisSpacing: 16.w),
                         itemBuilder: (context, index) {
@@ -449,7 +449,8 @@ void _loadMoreProducts() {
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  mainAxisSpacing: 16.h,
+                                  childAspectRatio: 1.5, 
+                                  mainAxisSpacing: 16.h, 
                                   crossAxisSpacing: 16.w),
                           itemCount: model.productList.length,
                           itemBuilder: (context, index) {
