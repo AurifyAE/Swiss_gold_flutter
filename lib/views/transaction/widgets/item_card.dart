@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:swiss_gold/core/models/transaction_model.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
+import 'package:swiss_gold/core/utils/money_format_heper.dart';
 
 class TransactionItem extends StatelessWidget {
   final Transaction transaction;
@@ -76,7 +77,7 @@ class TransactionItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${isCredit ? '+' : '-'} ${transaction.balanceType == 'GOLD' ? '${transaction.amount.toStringAsFixed(3)} g' : 'AED ${transaction.amount.toStringAsFixed(2)}'}',
+                        '${isCredit ? '+' : '-'} ${transaction.balanceType == 'GOLD' ? '${transaction.amount.toStringAsFixed(3)} g' : 'AED ${formatNumber(transaction.amount)}'}',
                         style: TextStyle(
                           fontFamily: 'Familiar',
                           fontSize: 16.sp,

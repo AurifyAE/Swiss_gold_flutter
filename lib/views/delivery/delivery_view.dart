@@ -5,7 +5,9 @@ import 'package:swiss_gold/core/models/product_model.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 import 'package:swiss_gold/core/view_models/product_view_model.dart';
-import 'package:swiss_gold/core/services/server_provider.dart'; // Import GoldRateProvider
+import 'package:swiss_gold/core/services/server_provider.dart';
+
+import '../../core/utils/money_format_heper.dart'; // Import GoldRateProvider
 
 class DeliveryDetailsView extends StatefulWidget {
   final Map<String, dynamic> orderData;
@@ -22,6 +24,9 @@ class DeliveryDetailsView extends StatefulWidget {
 }
 
 class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
+  // Helper method to format numbers with commas
+
+
   // Calculate total weight from booking data with real product weights
   double calculateTotalWeight(ProductViewModel productViewModel) {
     double totalWeight = 0.0;
@@ -195,7 +200,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        'Total Gold: ${totalWeight.toStringAsFixed(2)} g',
+                        'Total Gold: ${formatNumber(totalWeight)} g',
                         style: TextStyle(
                           color: UIColor.gold,
                           fontFamily: 'Familiar',
@@ -206,7 +211,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                       SizedBox(height: 8.h),
                       // Display bid price from GoldRateProvider
                       Text(
-                        'Bid Price: ${bidPrice.toStringAsFixed(2)}',
+                        'Bid Price: ${formatNumber(bidPrice)}',
                         style: TextStyle(
                           color: UIColor.gold,
                           fontFamily: 'Familiar',
@@ -241,7 +246,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                       SizedBox(height: 8.h),
                       // Replace LiveRateProvider with GoldRateProvider
                       Text(
-                        'Live rate: ${bidPrice > 0 ? (bidPrice).toStringAsFixed(2) : "2592.97"}',
+                        'Live rate: ${bidPrice > 0 ? formatNumber(bidPrice) : "2,592.97"}',
                         style: TextStyle(
                           color: UIColor.gold,
                           fontFamily: 'Familiar',
@@ -251,7 +256,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        'Total Amount: AED ${totalAmount.toStringAsFixed(2)}',
+                        'Total Amount: AED ${formatNumber(totalAmount)}',
                         style: TextStyle(
                           color: UIColor.gold,
                           fontFamily: 'Familiar',
@@ -364,7 +369,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ),
                           Text(
-                            '${totalWeight.toStringAsFixed(2)} g',
+                            '${formatNumber(totalWeight)} g',
                             style: TextStyle(
                               color: UIColor.gold,
                               fontFamily: 'Familiar',
@@ -388,7 +393,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ),
                           Text(
-                            bidPrice > 0 ? '${bidPrice.toStringAsFixed(2)}' : 'N/A',
+                            bidPrice > 0 ? formatNumber(bidPrice) : 'N/A',
                             style: TextStyle(
                               color: UIColor.gold,
                               fontFamily: 'Familiar',
@@ -415,7 +420,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ),
                           Text(
-                            'AED ${totalAmount.toStringAsFixed(2)}',
+                            'AED ${formatNumber(totalAmount)}',
                             style: TextStyle(
                               color: UIColor.gold,
                               fontFamily: 'Familiar',
@@ -441,8 +446,9 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               fontSize: 16.sp,
                             ),
                           ),
+                          // Format the discount with commas
                           Text(
-                            'AED ${widget.orderData['discount']}',
+                            'AED ${double.tryParse(widget.orderData['discount'] ?? '0') != null ? formatNumber(double.parse(widget.orderData['discount'])) : widget.orderData['discount']}',
                             style: TextStyle(
                               color: UIColor.gold,
                               fontFamily: 'Familiar',
@@ -468,8 +474,9 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               fontSize: 16.sp,
                             ),
                           ),
+                          // Format the premium with commas
                           Text(
-                            'AED ${widget.orderData['premium']}',
+                            'AED ${double.tryParse(widget.orderData['premium'] ?? '0') != null ? formatNumber(double.parse(widget.orderData['premium'])) : widget.orderData['premium']}',
                             style: TextStyle(
                               color: UIColor.gold,
                               fontFamily: 'Familiar',
@@ -576,7 +583,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               ),
                             ),
                             Text(
-                              '${productWeight.toStringAsFixed(2)} g',
+                              '${formatNumber(productWeight)} g',
                               style: TextStyle(
                                 color: UIColor.gold,
                                 fontFamily: 'Familiar',
@@ -598,7 +605,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               ),
                             ),
                             Text(
-                              '${(productWeight * quantity).toStringAsFixed(2)} g',
+                              '${formatNumber(productWeight * quantity)} g',
                               style: TextStyle(
                                 color: UIColor.gold,
                                 fontFamily: 'Familiar',
@@ -622,7 +629,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               ),
                             ),
                             Text(
-                              'AED ${productPrice.toStringAsFixed(2)}',
+                              'AED ${formatNumber(productPrice)}',
                               style: TextStyle(
                                 color: UIColor.gold,
                                 fontFamily: 'Familiar',
@@ -646,7 +653,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                                 ),
                               ),
                               Text(
-                                'AED ${makingCharge.toStringAsFixed(2)}',
+                                'AED ${formatNumber(makingCharge)}',
                                 style: TextStyle(
                                   color: UIColor.gold,
                                   fontFamily: 'Familiar',
@@ -671,7 +678,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                                 ),
                               ),
                               Text(
-                                'AED ${itemValue.toStringAsFixed(2)}',
+                                'AED ${formatNumber(itemValue)}',
                                 style: TextStyle(
                                   color: UIColor.gold,
                                   fontFamily: 'Familiar',
@@ -729,7 +736,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ),
                           Text(
-                            '${totalWeight.toStringAsFixed(2)} g',
+                            '${formatNumber(totalWeight)} g',
                             style: TextStyle(
                               color: UIColor.gold,
                               fontFamily: 'Familiar',
@@ -753,7 +760,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ),
                           Text(
-                            bidPrice > 0 ? '${bidPrice.toStringAsFixed(2)}' : 'N/A',
+                            bidPrice > 0 ? formatNumber(bidPrice) : 'N/A',
                             style: TextStyle(
                               color: UIColor.gold,
                               fontFamily: 'Familiar',
@@ -780,7 +787,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ),
                           Text(
-                            'AED ${totalAmount.toStringAsFixed(2)}',
+                            'AED ${formatNumber(totalAmount)}',
                             style: TextStyle(
                               color: UIColor.gold,
                               fontFamily: 'Familiar',

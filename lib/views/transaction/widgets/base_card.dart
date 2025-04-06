@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:swiss_gold/core/models/transaction_model.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
+import 'package:swiss_gold/core/utils/money_format_heper.dart';
 
 class BalanceCard extends StatelessWidget {
   final BalanceInfo balanceInfo;
@@ -105,7 +106,7 @@ class BalanceCard extends StatelessWidget {
                 ),
                 SizedBox(width: 8.w),
                 Text(
-                  'AED ${balanceInfo.cashBalance.toStringAsFixed(2)}',
+                  'AED ${formatNumber(balanceInfo.cashBalance)}',
                   style: TextStyle(
                     fontFamily: 'Familiar',
                     color: Colors.white,
