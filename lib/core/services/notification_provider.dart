@@ -1,5 +1,3 @@
-// lib/providers/notification_provider.dart
-
 import 'package:flutter/foundation.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
@@ -50,6 +48,25 @@ class NotificationProvider with ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       notifyListeners();
+    }
+  }
+
+  Future<bool> deleteNotification(String notificationId) async {
+    try {
+      final success = await _notificationService.deleteNotification(notificationId);
+      
+      if (success) {
+        // Remove from local state
+        _notifications.removeWhere((notification) => notification.id == notificationId);
+        _calculateUnreadCount();
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
     }
   }
 

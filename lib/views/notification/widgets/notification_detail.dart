@@ -1,5 +1,3 @@
-// lib/screens/notification_detail_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -195,26 +193,80 @@ class NotificationDetailScreen extends StatelessWidget {
                 
                 const SizedBox(height: 32),
                 
-                // Action buttons
-                if (!notification.read)
-                  Center(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        provider.markAsRead(notification.id);
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.mark_email_read),
-                      label: const Text('Mark as Read'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber.shade700,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                // Delete button
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      // Show confirmation dialog
+                      final shouldDelete = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Colors.grey.shade900,
+                          title: const Text(
+                            'Delete Notification',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          content: const Text(
+                            'Are you sure you want to delete this notification?',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(color: Colors.amber.shade300),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
                         ),
+                      ) ?? false;
+                      
+                      if (shouldDelete) {
+                        final success = await provider.deleteNotification(notification.id);
+                        
+                        if (success) {
+                          Navigator.pop(context);
+                          
+                          // Show success snackbar
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Notification deleted'),
+                              backgroundColor: Colors.green.shade700,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        } else {
+                          // Show error snackbar
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Failed to delete notification'),
+                              backgroundColor: Colors.red.shade700,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.delete_outline, color: Colors.white,),
+                    label: const Text('Delete Notification'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
+                ),
               ],
             ),
           );

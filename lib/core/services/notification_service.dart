@@ -1,12 +1,8 @@
-// lib/services/notification_service.dart
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/notification_model.dart';
 import 'local_storage.dart';
 import 'secrete_key.dart';
-// import '../core/services/local_storage.dart';
-// import '../core/services/secrete_key.dart';
 
 class NotificationService {
   final String baseUrl = 'https://api.nova.aurify.ae/user';
@@ -60,8 +56,9 @@ class NotificationService {
         throw Exception('User ID not found. Please login again.');
       }
 
+      // Updated endpoint based on provided information
       final response = await client.patch(
-        Uri.parse('$baseUrl/notifications/$userId/$notificationId/read'),
+        Uri.parse('$baseUrl/notifications/read/$userId/$notificationId'),
         headers: {
           'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'
@@ -76,6 +73,33 @@ class NotificationService {
       }
     } catch (e) {
       throw Exception('Error marking notification as read: $e');
+    }
+  }
+
+  Future<bool> deleteNotification(String notificationId) async {
+    try {
+      final userId = await _getUserId();
+      
+      if (userId == null) {
+        throw Exception('User ID not found. Please login again.');
+      }
+
+      final response = await client.delete(
+        Uri.parse('$baseUrl/notifications/$userId/$notificationId'),
+        headers: {
+          'X-Secret-Key': secreteKey,
+          'Content-Type': 'application/json'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return responseData['success'] == true;
+      } else {
+        throw Exception('Failed to delete notification: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error deleting notification: $e');
     }
   }
 
