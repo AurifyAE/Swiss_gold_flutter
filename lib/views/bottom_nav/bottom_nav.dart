@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/image_assets.dart';
 import 'package:swiss_gold/views/bottom_nav/no_internet_view.dart';
-import 'package:swiss_gold/views/cart/cart_view.dart';
+import 'package:swiss_gold/views/notification/notification_view.dart';
 import 'package:swiss_gold/views/order_history/order_history.dart';
 import 'package:swiss_gold/views/support/contact_view.dart';
 import 'package:swiss_gold/views/home/home_view.dart';
@@ -60,15 +62,7 @@ class _BottomNavState extends State<BottomNav> {
               _retryConnection();
             }
             break;
-          default:
-            if (isConnected) {
-              setState(() {
-                isConnected = false;
-              });
-              _retryConnection();
-            }
-            break;
-        }
+          }
       }
     });
   }
@@ -108,8 +102,17 @@ class _BottomNavState extends State<BottomNav> {
         toolbarHeight: 120.h,
         title: Image.asset(
           ImageAssets.mainLogo,
-          width: 250.w,
+          width: 200.w,
         ),
+        actions: [
+          IconButton(onPressed: (){
+            Navigator.push(context, CupertinoPageRoute(builder: (context) => NotificationView(),));
+          }, icon: Icon(
+                PhosphorIcons.bellSimple(PhosphorIconsStyle.bold),color: UIColor.gold ,
+                size: 32.sp,
+              ),),
+              SizedBox(width: 10,) 
+        ],
       ),
       body: isConnected
           ? AnimatedSwitcher(
@@ -149,6 +152,7 @@ class _BottomNavState extends State<BottomNav> {
                 size: 32.sp,
               ),
               label: 'Orders'),
+          
           BottomNavigationBarItem(
               icon: Icon(
                 PhosphorIcons.headset(),
@@ -156,7 +160,7 @@ class _BottomNavState extends State<BottomNav> {
               ),
               label: 'Contact'),
              
-          BottomNavigationBarItem(
+          BottomNavigationBarItem( 
               icon: Icon(
                 PhosphorIcons.gearSix(),
                 size: 32.sp,

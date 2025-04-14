@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -83,12 +85,17 @@ class _LoginViewState extends State<LoginView> {
                     final token = await FcmService.getToken();
                     log(token.toString());
 
+                    log('📲 FCM Token: $token');
+
+
                     Provider.of<AuthViewModel>(context, listen: false).login(
                       {
                         "contact": int.parse(mobileController.text),
                         "password": passController.text,
                         'token': token,
                       },
+
+                      
                         
                       
                     ).then((response) async {

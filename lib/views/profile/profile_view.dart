@@ -181,6 +181,7 @@ class _ProfileViewState extends State<ProfileView>
                                       ]).then(
                                         (_) {
                                           Navigator.pushAndRemoveUntil(
+                                              // ignore: use_build_context_synchronously
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>

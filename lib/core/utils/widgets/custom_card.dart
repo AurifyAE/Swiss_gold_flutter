@@ -1,9 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
-import 'package:swiss_gold/core/utils/widgets/category_shimmer.dart';
 
 class CustomCard extends StatelessWidget {
   final String prodImg;
@@ -29,10 +26,8 @@ class CustomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<String> priceParts = price.split('.');
+    price.split('.');
 
-    String integerPart = priceParts[0];
-    String decimalPart = priceParts.length > 1 ? priceParts[1] : '';
 
     return GestureDetector(
       onTap: onTap,

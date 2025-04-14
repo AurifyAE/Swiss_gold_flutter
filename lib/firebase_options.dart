@@ -41,48 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCAHapnxRWqH8lwgYuFjrHQ7rDrkRlSe54',
-    appId: '1:329227476273:web:d977025db3317cafeee410',
-    messagingSenderId: '329227476273',
-    projectId: 'pushnotifaction-11aab',
-    authDomain: 'pushnotifaction-11aab.firebaseapp.com',
-    storageBucket: 'pushnotifaction-11aab.firebasestorage.app',
-    measurementId: 'G-LB4BB5PSG5',
+    apiKey: 'AIzaSyCdmg3gi8h9jKA_fsxXmrltg0aJUFJqf6M',
+    appId: '1:323401473101:web:a78c76412c8a8c123ad004',
+    messagingSenderId: '323401473101',
+    projectId: 'aurify-pushnotification',
+    authDomain: 'aurify-pushnotification.firebaseapp.com',
+    storageBucket: 'aurify-pushnotification.firebasestorage.app',
+    measurementId: 'G-LDPBNK46Z6',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAxqLz38mV2VN3IR6YeF9DQS_ZUyDdA0qc',
-    appId: '1:329227476273:android:b674d95426fd35a1eee410',
-    messagingSenderId: '329227476273',
-    projectId: 'pushnotifaction-11aab',
-    storageBucket: 'pushnotifaction-11aab.firebasestorage.app',
+    apiKey: 'AIzaSyCevQoxXL99yB4k1b48S_Ivjv48c88m1l0',
+    appId: '1:323401473101:android:7f333db0fd6eff813ad004',
+    messagingSenderId: '323401473101',
+    projectId: 'aurify-pushnotification',
+    storageBucket: 'aurify-pushnotification.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDJHftzZwSbJXwsB5Fg77PkAaRyBJWnHMc',
-    appId: '1:329227476273:ios:992074daf491428beee410',
-    messagingSenderId: '329227476273',
-    projectId: 'pushnotifaction-11aab',
-    storageBucket: 'pushnotifaction-11aab.firebasestorage.app',
+    apiKey: 'AIzaSyBS5rbOEIk7FA2qBfFRMH5Ewrjr17U5wOw',
+    appId: '1:323401473101:ios:f9014f54ac16c8af3ad004',
+    messagingSenderId: '323401473101',
+    projectId: 'aurify-pushnotification',
+    storageBucket: 'aurify-pushnotification.firebasestorage.app',
     iosBundleId: 'com.tecnavis.swissgold',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDJHftzZwSbJXwsB5Fg77PkAaRyBJWnHMc',
-    appId: '1:329227476273:ios:992074daf491428beee410',
-    messagingSenderId: '329227476273',
-    projectId: 'pushnotifaction-11aab',
-    storageBucket: 'pushnotifaction-11aab.firebasestorage.app',
+    apiKey: 'AIzaSyBS5rbOEIk7FA2qBfFRMH5Ewrjr17U5wOw',
+    appId: '1:323401473101:ios:f9014f54ac16c8af3ad004',
+    messagingSenderId: '323401473101',
+    projectId: 'aurify-pushnotification',
+    storageBucket: 'aurify-pushnotification.firebasestorage.app',
     iosBundleId: 'com.tecnavis.swissgold',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCXmn_n7D5K_p88voGCIlZhsFMJWes27P4',
-    appId: '1:329227476273:web:8a4dab8b1dddf30aeee410',
-    messagingSenderId: '329227476273',
-    projectId: 'pushnotifaction-11aab',
-    authDomain: 'pushnotifaction-11aab.firebaseapp.com',
-    storageBucket: 'pushnotifaction-11aab.firebasestorage.app',
-    measurementId: 'G-SXLW2E3C7B',
+    apiKey: 'AIzaSyCdmg3gi8h9jKA_fsxXmrltg0aJUFJqf6M',
+    appId: '1:323401473101:web:2389a22e4a88e3893ad004',
+    messagingSenderId: '323401473101',
+    projectId: 'aurify-pushnotification',
+    authDomain: 'aurify-pushnotification.firebaseapp.com',
+    storageBucket: 'aurify-pushnotification.firebasestorage.app',
+    measurementId: 'G-88VPEJF9HY',
   );
+
 }

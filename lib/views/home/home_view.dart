@@ -1,7 +1,12 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
+// ignore: unused_import
 import 'package:swiss_gold/core/utils/endpoint.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/utils/image_assets.dart';
@@ -73,157 +78,118 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       1,
     );
   }
-
-  void processOrder(Map<String, dynamic> finalPayload) {
-    print(finalPayload);
-    context
-        .read<ProductViewModel>()
-        .bookProducts(finalPayload)
-        .then((response) {
-      if (response!.success == true) {
-        setState(() {
-          selectedValue = '';
-          bookingData.clear();
-          productQuantities.clear();
-        });
-
-        context.read<ProductViewModel>().clearQuantities();
-
-        customSnackBar(
-            bgColor: UIColor.gold,
-            titleColor: UIColor.white,
-            width: 130.w,
-            context: context,
-            title: 'Booking success');
-      } else {
-        customSnackBar(
-            bgColor: UIColor.gold,
-            titleColor: UIColor.white,
-            width: 130.w,
-            context: context,
-            title: 'Booking failed');
-      }
+void processOrder(Map<String, dynamic> finalPayload) {
+  // Don't directly call bookProducts here
+  // Instead, use the result from DeliveryDetailsView's callback
+  print(finalPayload);
+  
+  if (finalPayload.containsKey("success") && finalPayload["success"] == true) {
+    setState(() {
+      selectedValue = '';
+      bookingData.clear();
+      productQuantities.clear();
     });
+
+    context.read<ProductViewModel>().clearQuantities();
+
+    // customSnackBar(
+    //   bgColor: UIColor.gold,
+    //   titleColor: UIColor.white,
+    //   width: 130.w,
+    //   context: context,
+    //   title: 'Booking success'
+    // );
+  } else {
+    // customSnackBar(
+    //   bgColor: UIColor.gold,
+    //   titleColor: UIColor.white,
+    //   width: 130.w,
+    //   context: context,
+    //   title: 'Booking failed'
+    // );
   }
+}
 
- @override
-void initState() {
-  super.initState();
-  context.read<OrderHistoryViewModel>().getCashPricing('Cash');
-  context.read<OrderHistoryViewModel>().getBankPricing('Bank');
+  @override
+  void initState() {
+    super.initState();
+    context.read<OrderHistoryViewModel>().getCashPricing('Cash');
+    context.read<OrderHistoryViewModel>().getBankPricing('Bank');
 
-  animationController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 300),
-  );
-  animation = CurvedAnimation(
-    parent: animationController!,
-    curve: Curves.easeInOut,
-  );
+    animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    animation = CurvedAnimation(
+      parent: animationController!,
+      curve: Curves.easeInOut,
+    );
 
-  scrollController.addListener(
-    () {
-      if (scrollController.position.atEdge) {
-        if (scrollController.position.pixels ==
-            scrollController.position.maxScrollExtent) {
-          final model = context.read<ProductViewModel>();
+    scrollController.addListener(
+      () {
+        if (scrollController.position.atEdge) {
+          if (scrollController.position.pixels ==
+              scrollController.position.maxScrollExtent) {
+            final model = context.read<ProductViewModel>();
 
-          if (!model.isLoading && model.hasMoreData) {
-            currentPage++;
-            _loadMoreProducts();
+            if (!model.isLoading && model.hasMoreData) {
+              currentPage++;
+              _loadMoreProducts();
+            }
           }
         }
-      }
-    },
-  );
+      },
+    );
 
-  _pageFocusNode.addListener(_onFocusChange);
-
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (!_initialFetchDone) {
-      // First sync quantities from the view model
-      _syncQuantitiesFromViewModel();
-      
-      // Then fetch products only if they haven't been fetched yet
-      if (context.read<ProductViewModel>().productList.isEmpty) {
-        context.read<ProductViewModel>().fetchProducts();
-      }
-      _initialFetchDone = true;
-    }
-  });
-}
-
-void _onFocusChange() {
-  if (_pageFocusNode.hasFocus) {
-    // Just sync quantities when focus changes, don't fetch products
-    _syncQuantitiesFromViewModel();
-  }
-}
-
-void _syncQuantitiesFromViewModel() {
-  final viewModel = context.read<ProductViewModel>();
-  setState(() {
-    productQuantities = Map<int, int>.from(viewModel.productQuantities);
-    _updateBookingData();
-  });
-}
-
-// New method that updates booking data without triggering a fetch
-void _updateBookingData() {
-  bookingData.clear();
-
-  final productList = context.read<ProductViewModel>().productList;
-  productQuantities.forEach((index, quantity) {
-    if (index < productList.length && quantity > 0) {
-      final product = productList[index];
-      if (product.pId != null) {
-        bookingData.add({
-          "productId": product.pId,
-          "quantity": quantity,
-        });
-      }
-    }
-  });
-}
-
-void _rebuildBookingData() {
-  bookingData.clear();
-
-  final productList = context.read<ProductViewModel>().productList;
-  productQuantities.forEach((index, quantity) {
-    if (index < productList.length && quantity > 0) {
-      final product = productList[index];
-      if (product.pId != null) {
-        bookingData.add({
-          "productId": product.pId,
-          "quantity": quantity,
-        });
-      }
-    }
-  });
+    _pageFocusNode.addListener(_onFocusChange);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchProductsDirectly();
+      if (!_initialFetchDone) {
+        _syncQuantitiesFromViewModel();
+
+        if (context.read<ProductViewModel>().productList.isEmpty) {
+          context.read<ProductViewModel>().fetchProducts();
+        }
+        _initialFetchDone = true;
+      }
     });
   }
 
-void _fetchProductsDirectly() {
-  final viewModel = context.read<ProductViewModel>();
+  void _onFocusChange() {
+    if (_pageFocusNode.hasFocus) {
+      _syncQuantitiesFromViewModel();
+    }
+  }
 
-  setState(() {
-    productQuantities = Map<int, int>.from(viewModel.productQuantities);
-  });
+  void _syncQuantitiesFromViewModel() {
+    final viewModel = context.read<ProductViewModel>();
+    setState(() {
+      productQuantities = Map<int, int>.from(viewModel.productQuantities);
+      _updateBookingData();
+    });
+  }
 
-  viewModel.fetchProducts();
-}
+  void _updateBookingData() {
+    bookingData.clear();
 
-void _loadMoreProducts() {
-  final viewModel = context.read<ProductViewModel>();
-  final String adminId = viewModel.adminId ?? '';
-  final String categoryId = viewModel.categoryId ?? '';
-  viewModel.fetchProducts(adminId, categoryId, currentPage.toString());
-}
+    final productList = context.read<ProductViewModel>().productList;
+    productQuantities.forEach((index, quantity) {
+      if (index < productList.length && quantity > 0) {
+        final product = productList[index];
+        bookingData.add({
+          "productId": product.pId,
+          "quantity": quantity,
+        });
+            }
+    });
+  }
+
+  void _loadMoreProducts() {
+    final viewModel = context.read<ProductViewModel>();
+    final String adminId = viewModel.adminId ?? '';
+    final String categoryId = viewModel.categoryId ?? '';
+    viewModel.fetchProducts(adminId, categoryId, currentPage.toString());
+  }
 
   void addToBookingData(int index, String pId) {
     int quantity = productQuantities[index] ?? 1;
@@ -256,52 +222,117 @@ void _loadMoreProducts() {
     }
   }
 
-  void incrementQuantity(int index) {
-    if (index >= context.read<ProductViewModel>().productList.length) {
-      return;
+void incrementQuantity(int index) {
+  if (index >= context.read<ProductViewModel>().productList.length) {
+    log('Invalid index: $index for product list');
+    return;
+  }
+
+  final product = context.read<ProductViewModel>().productList[index];
+
+  final String productId = product.pId;
+  log('Incrementing quantity for product: $productId at index: $index');
+
+  // First update local state
+  setState(() {
+    if (productQuantities[index] != null) {
+      productQuantities[index] = productQuantities[index]! + 1;
+      log('Updated quantity: ${productQuantities[index]} for index: $index');
+    } else {
+      productQuantities[index] = 1;
+      log('Initial quantity set to 1 for index: $index');
     }
 
-    final product = context.read<ProductViewModel>().productList[index];
-    if (product.pId == null) return;
+    // Update the total quantity in ProductViewModel
+    context
+        .read<ProductViewModel>()
+        .getTotalQuantity(Map<int, int>.from(productQuantities));
 
-    setState(() {
-      if (productQuantities[index] != null) {
-        productQuantities[index] = productQuantities[index]! + 1;
+    // Update booking data
+    addToBookingData(index, product.pId);
+  });
+
+  // If user is not in guest mode, update cart on the server
+  if (context.read<ProductViewModel>().isGuest == false) {
+    context.read<CartViewModel>().incrementQuantity(
+        {'pId': productId}, index: index).then((result) {
+      if (result != null && result.success == true) {
+        log('Cart incremented for product: $productId with quantity: ${productQuantities[index]}');
       } else {
-        productQuantities[index] = 1;
+        log('Failed to increment cart: ${result?.message ?? "Unknown error"}');
       }
-
-      context
-          .read<ProductViewModel>()
-          .getTotalQuantity(Map<int, int>.from(productQuantities));
-
-      addToBookingData(index, product.pId!);
+    }).catchError((error) {
+      log('Error incrementing cart: $error');
     });
+  } else {
+    // User in guest mode, use admin ID "gyu123" for the cart operations
+    context.read<CartViewModel>().incrementQuantity(
+        {'pId': productId, 'userId': 'gyu123'}, index: index).then((result) {
+      if (result != null && result.success == true) {
+        log('Cart incremented for guest user with admin ID "gyu123" for product: $productId with quantity: ${productQuantities[index]}');
+      } else {
+        log('Failed to increment cart for guest user: ${result?.message ?? "Unknown error"}');
+      }
+    }).catchError((error) {
+      log('Error incrementing cart for guest user: $error');
+    });
+    log('User in guest mode, cart updated on server with admin ID: gyu123');
   }
+}
+
 
   void decrementQuantity(int index) {
     if (index >= context.read<ProductViewModel>().productList.length) {
+      log('Invalid index: $index for product list');
       return;
     }
 
     final product = context.read<ProductViewModel>().productList[index];
-    if (product.pId == null) return;
 
+    if (productQuantities[index] == null || productQuantities[index]! <= 0) {
+      log('Quantity is already 0 or null for index: $index');
+      return;
+    }
+
+    final String productId = product.pId;
+    log('Decrementing quantity for product: $productId at index: $index');
+
+    // First update local state
     setState(() {
-      if (productQuantities[index] != null && productQuantities[index]! > 0) {
-        productQuantities[index] = productQuantities[index]! - 1;
+      productQuantities[index] = productQuantities[index]! - 1;
+      log('Updated quantity: ${productQuantities[index]} for index: $index');
 
-        if (productQuantities[index] == 0) {
-          productQuantities.remove(index);
-        }
+      if (productQuantities[index] == 0) {
+        productQuantities.remove(index);
+        log('Removed index: $index from productQuantities as quantity is 0');
       }
 
+      // Update the total quantity in ProductViewModel
       context
           .read<ProductViewModel>()
           .getTotalQuantity(Map<int, int>.from(productQuantities));
 
-      removeFromBookingData(index, product.pId!);
+      // Update booking data
+      removeFromBookingData(index, product.pId);
     });
+
+    // If user is not in guest mode, update cart on the server
+    if (context.read<ProductViewModel>().isGuest == false) {
+      context.read<CartViewModel>().decrementQuantity({
+        'pId': productId,
+        'quantity': productQuantities[index] ?? 0
+      }).then((response) {
+        if (response?.success == true) {
+          log('Cart decremented for product: $productId with quantity: ${productQuantities[index] ?? 0}');
+        } else {
+          log('Failed to decrement cart: ${response?.message}');
+        }
+      }).catchError((error) {
+        log('Error decrementing cart: $error');
+      });
+    } else {
+      log('User in guest mode, cart not updated on server');
+    }
   }
 
   @override
@@ -381,6 +412,11 @@ void _loadMoreProducts() {
                                       ?.data
                                       .value
                                       .toString());
+                                      selectedValue = '';
+      // bookingData.clear();
+      productQuantities.clear();
+
+                                      
                             },
                             btnTextColor: UIColor.gold,
                             btnText: 'Cash',
@@ -413,7 +449,7 @@ void _loadMoreProducts() {
                         physics: NeverScrollableScrollPhysics(),
                         itemCount: 6,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,   
+                            crossAxisCount: 2,
                             mainAxisSpacing: 16.h,
                             crossAxisSpacing: 16.w),
                         itemBuilder: (context, index) {
@@ -449,24 +485,24 @@ void _loadMoreProducts() {
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  childAspectRatio: 1.5, 
-                                  mainAxisSpacing: 16.h, 
+                                  childAspectRatio: 1.2,
+                                  mainAxisSpacing: 16.h,
                                   crossAxisSpacing: 16.w),
                           itemCount: model.productList.length,
                           itemBuilder: (context, index) {
                             final product = model.productList[index];
 
-                            final String productId = product.pId ?? '';
+                            final String productId = product.pId;
                             final String imageUrl = product.prodImgs.isNotEmpty
                                 ? product.prodImgs[0].url
                                 : 'https://via.placeholder.com/150';
                             final String title =
-                                product.title ?? 'Unknown Product';
+                                product.title;
                             final int quantity = productQuantities[index] ?? 0;
                             final String price = product.type?.toLowerCase() ==
                                     'gold'
                                 ? 'AED ${(model.goldSpotRate ?? 0).toStringAsFixed(2)}'
-                                : 'AED ${(product.price ?? 0).toStringAsFixed(2)}';
+                                : 'AED ${(product.price).toStringAsFixed(2)}';
                             final String productType =
                                 product.type ?? 'Unknown';
 
@@ -515,16 +551,16 @@ void _loadMoreProducts() {
                                     context,
                                     ProductView(
                                       prodImg: product.prodImgs
-                                          .map((e) => e.url ?? '')
+                                          .map((e) => e.url)
                                           .toList(),
                                       title: title,
                                       pId: productId,
-                                      desc: product.desc ?? '',
+                                      desc: product.desc,
                                       type: productType,
-                                      stock: product.stock ?? false,
-                                      purity: product.purity ?? 0,
-                                      weight: product.weight ?? 0,
-                                      makingCharge: product.makingCharge ?? 0,
+                                      stock: product.stock,
+                                      purity: product.purity,
+                                      weight: product.weight,
+                                      makingCharge: product.makingCharge,
                                     ),
                                     0,
                                     1);

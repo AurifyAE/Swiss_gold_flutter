@@ -1,9 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+// ignore: unnecessary_import
 import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
-import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 
 class OrderCard extends StatelessWidget {
   final String status;

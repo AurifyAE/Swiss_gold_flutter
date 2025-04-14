@@ -13,7 +13,7 @@ class OrderHistoryService {
   static Future<OrderModel?> getOrderHistory(String page, String status) async {
     try {
       final userId = await LocalStorage.getString('userId');
-      final adminId = '67c1a8978399ea3181f5cad9'; // Get adminId if available
+      final adminId = '67f37dfe4831e0eb637d09f1'; // Get adminId if available
       
       // Build the URL with query parameters
       String baseUrl = 'https://api.nova.aurify.ae/user/fetch-order/$adminId/$userId';
@@ -56,26 +56,28 @@ class OrderHistoryService {
 
   static Future<PricingMethodModel?> getPricing(String type) async {
     try {
+      final id = await LocalStorage.getString('userId');
+      log(id.toString());
+
       final url = pricingUrl.replaceFirst('{type}', type);
-      log('Fetching pricing from: $url');
-      
+      log(url);
       var response = await client.get(
         Uri.parse(url),
         headers: {
           'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'
-        },
+        }, // Encoding payload to JSON
       );
 
       if (response.statusCode == 200) {
+        // log(response.body);
         Map<String, dynamic> responseData = jsonDecode(response.body);
+
         return PricingMethodModel.fromJson(responseData);
       } else {
-        log('Error fetching pricing: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      log('Exception in getPricing: ${e.toString()}');
       return null;
     }
   }

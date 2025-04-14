@@ -8,8 +8,6 @@ import 'package:swiss_gold/core/services/local_storage.dart';
 import 'package:swiss_gold/core/services/secrete_key.dart';
 import 'package:swiss_gold/core/utils/endpoint.dart';
 
-import '../models/product_model.dart';
-
 class ProductService {
   static final client = http.Client();
   static final _marketDataStreamController =
@@ -64,7 +62,6 @@ class ProductService {
     return null;
   }
 
-  
   static Future<double?> getSpotRate() async {
     try {
       var response = await client.get(
@@ -78,7 +75,7 @@ class ProductService {
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = jsonDecode(response.body);
 
-       num goldSpotRate = responseData['info']['goldBidSpread'];
+        num goldSpotRate = responseData['info']['goldBidSpread'];
         // log(goldSpotRate.toString());
         // log(response.body);
         return goldSpotRate.toDouble();
@@ -97,12 +94,12 @@ class ProductService {
       // Get adminId and categoryId from storage
       final adminId = await LocalStorage.getString('adminId') ?? '';
       final categoryId = await LocalStorage.getString('categoryId') ?? '';
-      
+
       log('Fetching product symbols with adminId: $adminId, categoryId: $categoryId');
-      
+
       // Fetch products using the flexible fetching method
       final products = await fetchProducts(adminId, categoryId);
-      
+
       // Extract product identifiers (using SKU as symbols)
       return products.map((product) => product['sku'].toString()).toList();
     } catch (e) {
@@ -146,18 +143,19 @@ class ProductService {
     }
   }
 
-  static Future<List<dynamic>> fetchProducts([String? adminId, String? categoryId]) async {
+  static Future<List<dynamic>> fetchProducts(
+      [String? adminId, String? categoryId]) async {
     try {
       // Use provided parameters or fetch from storage if not provided
-      adminId = '67c1a8978399ea3181f5cad9';
+      adminId = '67f37dfe4831e0eb637d09f1';
       categoryId ??= await LocalStorage.getString('categoryId') ?? '';
-      
+
       log('Fetching products with adminId: $adminId, categoryId: $categoryId');
-      
+
       // Construct the URL based on the custom logic
       String baseUrl = 'https://api.nova.aurify.ae/user/get-product';
       String url;
-      
+
       if (adminId.isNotEmpty && categoryId.isNotEmpty) {
         // Both adminId and categoryId are present
         url = '$baseUrl/$adminId/$categoryId';
@@ -172,9 +170,9 @@ class ProductService {
         log('Error: Both adminId and categoryId are empty');
         throw Exception('Missing required parameters');
       }
-      
+
       log('Making request to URL: $url');
-      
+
       final response = await client.get(
         Uri.parse(url),
         headers: {
@@ -182,13 +180,13 @@ class ProductService {
           'Content-Type': 'application/json',
         },
       );
-      
+
       log('Response status code: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         log('Response data: ${responseData.toString()}');
-        
+
         if (responseData['success'] == true && responseData['data'] != null) {
           return responseData['data'];
         } else {
@@ -205,36 +203,6 @@ class ProductService {
       return [];
     }
   }
-
-  //   static Future<ProductModel?> listProducts(
-  //     Map<String, dynamic> payload) async {
-  //   try {
-  //     final url = listProductUrl.replaceFirst('{index}', payload['index']);
-  //     var response = await client.get(
-  //       Uri.parse(url),
-  //       headers: {
-  //         'X-Secret-Key': secreteKey,
-  //         'Content-Type': 'application/json'
-  //       },
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       Map<String, dynamic> responseData = jsonDecode(response.body);
-  //       // log(responseData.toString());
-
-  //       return ProductModel.fromJson(responseData);
-  //     } else {
-  //       // Map<String, dynamic> responseData = jsonDecode(response.body);
-
-  //       // log(responseData.toString());
-
-  //       return null;
-  //     }
-  //   } catch (e) {
-  //     // log(e.toString());
-  //     return null;
-  //   }
-  // }
 
   static Future<MessageModel?> fixPrice(Map<String, dynamic> payload) async {
     try {
@@ -259,21 +227,20 @@ class ProductService {
     }
   }
 
-  static Future<MessageModel?> bookProducts(Map<String, dynamic> payload) async {
+  static Future<MessageModel?> bookProducts(
+      Map<String, dynamic> payload) async {
     try {
       final id = await LocalStorage.getString('userId');
       if (id == null || id.isEmpty) {
         log('Error: userId is empty');
-        return MessageModel.fromJson({
-          'success': false,
-          'message': 'User ID is missing'
-        });
+        return MessageModel.fromJson(
+            {'success': false, 'message': 'User ID is missing'});
       }
 
       final url = bookingUrl.replaceFirst('{userId}', id.toString());
       log('Booking products with URL: $url');
       log('Booking payload: ${payload.toString()}');
-      
+
       var response = await client.post(Uri.parse(url),
           headers: {
             'X-Secret-Key': secreteKey,
@@ -282,7 +249,7 @@ class ProductService {
           body: jsonEncode(payload));
 
       log('Booking response status: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = jsonDecode(response.body);
         return MessageModel.fromJson(responseData);
@@ -296,7 +263,7 @@ class ProductService {
       return null;
     }
   }
-  
+
   static void dispose() {
     _socket?.disconnect();
     _socket?.dispose();

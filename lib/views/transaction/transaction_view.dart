@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-import 'package:swiss_gold/core/models/transaction_model.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
+import 'package:swiss_gold/core/utils/navigate.dart';
+import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 import 'package:swiss_gold/core/view_models/transaction_view_model.dart';
+import 'package:swiss_gold/views/login/login_view.dart';
 
-import 'widgets/base_card.dart';
+import '../../core/view_models/cart_view_model.dart';
 import 'widgets/item_card.dart';
-// import 'package:swiss_gold/views/transactions/widgets/balance_card.dart';
-// import 'package:swiss_gold/views/transactions/widgets/transaction_item.dart';
 
 class TransactionHistoryView extends StatefulWidget {
-  // final String userId;
-  
   const TransactionHistoryView({
-    Key? key, 
-    
-  }) : super(key: key);
+    super.key, 
+  });
 
   @override
   State<TransactionHistoryView> createState() => _TransactionHistoryViewState();
@@ -28,22 +25,32 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
   final List<String> filters = ['All', 'Gold', 'Cash', 'Credit', 'Debit'];
   
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TransactionViewModel>().fetchTransactions();
-    });
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Check login status from CartViewModel first before fetching transactions
+    final cartModel = context.read<CartViewModel>();
+    final transactionModel = context.read<TransactionViewModel>();
     
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-        final model = context.read<TransactionViewModel>();
-        if (model.pagination != null && 
-            model.pagination!.currentPage < model.pagination!.totalPages) {
-          model.loadMoreTransactions();
-        }
+    // First check guest status from CartViewModel
+    cartModel.checkGuestMode().then((_) {
+      if (!(cartModel.isGuest ?? false)) {
+        transactionModel.fetchTransactions();
       }
     });
-  }
+  });
+  
+  _scrollController.addListener(() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      final cartModel = context.read<CartViewModel>();
+      final transactionModel = context.read<TransactionViewModel>();
+      if (!cartModel.isGuest! && transactionModel.pagination != null && 
+          transactionModel.pagination!.currentPage < transactionModel.pagination!.totalPages) {
+        transactionModel.loadMoreTransactions();
+      }
+    }
+  });
+}
   
   @override
   void dispose() {
@@ -54,7 +61,6 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(
           'Transaction History',
@@ -64,7 +70,6 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        // backgroundColor: Colors.white,
         elevation: 0.5,
         centerTitle: true,
         leading: IconButton(
@@ -75,60 +80,129 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
           IconButton(
             icon: Icon(Icons.refresh, color: UIColor.gold),
             onPressed: () {
-              context.read<TransactionViewModel>().refreshTransactions();
+              final model = context.read<TransactionViewModel>();
+              if (!model.isGuest) {
+                model.refreshTransactions();
+              }
             },
           ),
         ],
       ),
       body: Consumer<TransactionViewModel>(
         builder: (context, model, child) {
-          if (model.state == ViewState.loading) {
-            return Center(
-              child: CircularProgressIndicator(color: UIColor.gold),
-            );
-          } else if (model.state == ViewState.error) {
+          // Check if user is a guest
+          final bool isGuestUser = model.isGuest;
+          
+          // If user is a guest, show login UI
+          if (isGuestUser) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    Icons.lock_outline,
                     size: 60.r,
-                    color: Colors.red,
+                    color: UIColor.gold,
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 20.h),
                   Text(
-                    'Failed to load transactions',
+                    'Please login to view your transaction history',
                     style: TextStyle(
-                      fontFamily: 'Familiar',
+                      color: UIColor.gold,
                       fontSize: 16.sp,
+                      fontFamily: 'Familiar',
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: UIColor.gold,
-                      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                    onPressed: () {
-                      model.fetchTransactions();
+                  SizedBox(height: 20.h),
+                  CustomOutlinedBtn(
+                    borderRadius: 22.sp,
+                    borderColor: UIColor.gold,
+                    padH: 10.w,
+                    padV: 10.h,
+                    width: 200.w,
+                    btnText: 'Login',
+                    btnTextColor: UIColor.gold,
+                    fontSize: 22.sp,
+                    onTapped: () {
+                      navigateTo(context, LoginView());
                     },
-                    child: Text(
-                      'Retry',
-                      style: TextStyle(
-                        fontFamily: 'Familiar',
-                        color: Colors.white,
-                      ),
-                    ),
                   ),
                 ],
               ),
             );
           }
           
+          // Loading state
+          if (model.state == ViewState.loading) {
+            return Center(
+              child: CircularProgressIndicator(color: UIColor.gold),
+            );
+          } 
+          // Error state
+          else if (model.state == ViewState.error) {
+            return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Image.asset(
+          //   'assets/images/empty_transactions.png', // Replace with your own asset
+          //   width: 120.w,
+          //   height: 120.h,
+          //   color: UIColor.gold.withOpacity(0.7),
+          // ),
+          // Alternative if you don't have an image:
+          Icon(
+            Icons.history,
+            size: 80.r,
+            // ignore: deprecated_member_use
+            color: UIColor.gold.withOpacity(0.7),
+          ),
+          SizedBox(height: 20.h),
+          Text(
+            'No Transactions Yet',
+            style: TextStyle(
+              fontFamily: 'Familiar',
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40.w),
+            child: Text(
+              'Your transaction history will appear here once you make your first purchase.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Familiar',
+                fontSize: 14.sp,
+                color: Colors.grey[400],
+                height: 1.4,
+              ),
+            ),
+          ),
+          SizedBox(height: 24.h),
+          CustomOutlinedBtn(
+            borderRadius: 22.sp,
+            borderColor: UIColor.gold,
+            padH: 10.w,
+            padV: 10.h,
+            width: 200.w,
+            btnText: 'Shop Now',
+            btnTextColor: UIColor.gold,
+            fontSize: 16.sp,
+            onTapped: () {
+              // Navigate to shop/home page
+              Navigator.pop(context);
+            },
+          ),
+        ], 
+      ),
+    );
+          }
+          
+          // Successful data loaded state
           return RefreshIndicator(
             color: UIColor.gold,
             onRefresh: () async {
@@ -137,17 +211,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.r),
-                    child: model.balanceInfo != null && model.summary != null
-                        ? BalanceCard(
-                            balanceInfo: model.balanceInfo!,
-                            summary: model.summary!,
-                          )
-                        : SizedBox.shrink(),
-                  ),
-                ),
+               
                 
                 // Filter chips
                 SliverToBoxAdapter(
@@ -216,7 +280,6 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
                         if (model.transactions.isNotEmpty)
                           GestureDetector(
                             onTap: () {
-                              // Implement sort functionality
                               model.toggleSortOrder();
                             },
                             child: Row(

@@ -1,51 +1,57 @@
 class CompanyProfileModel {
   final String message;
   final bool success;
-  final Data data;
+  final String userId;
+  final UserDetails userDetails;
 
   CompanyProfileModel({
     required this.message,
     required this.success,
-    required this.data,
+    required this.userId,
+    required this.userDetails,
   });
 
   factory CompanyProfileModel.fromJson(Map<String, dynamic> json) {
     return CompanyProfileModel(
-      message: json['message'],
-      success: json['success'],
-      data: Data.fromJson(json['info']),
+      message: json['message'] ?? '',
+      success: json['success'] ?? false,
+      userId: json['userId'] ?? '',
+      userDetails: UserDetails.fromJson(json['userDetails'] ?? {}),
     );
   }
 }
 
-class Data {
-  final String id;
-  final String userName;
-  final String companyName;
-  final String address;
+class UserDetails {
+  final String name;
   final String email;
   final int contact;
-  final int whatsapp;
+  final String address;
+  final String? categoryId;  // Made nullable
+  final double cashBalance;
+  final double goldBalance;
+  final String? categoryName;  // Made nullable
 
-  Data({
-    required this.id,
-    required this.userName,
-    required this.companyName,
-    required this.address,
+  UserDetails({
+    required this.name,
     required this.email,
     required this.contact,
-    required this.whatsapp,
+    required this.address,
+    this.categoryId,  // Optional
+    required this.cashBalance,
+    required this.goldBalance,
+    this.categoryName,  // Optional
   });
 
-  factory Data.fromJson(Map<String, dynamic> json) {
-    return Data(
-      id: json['_id'],
-      userName: json['userName'],
-      companyName: json['companyName'],
-      address: json['address'],
-      email: json['email'],
-      contact: json['contact'],
-      whatsapp: json['whatsapp'],
+  factory UserDetails.fromJson(Map<String, dynamic> json) {
+    return UserDetails(
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      contact: json['contact'] ?? 0,
+      address: json['address'] ?? '',
+      categoryId: json['categoryId'],  // Allow null
+      cashBalance: (json['cashBalance'] ?? 0).toDouble(),
+      goldBalance: (json['goldBalance'] ?? 0).toDouble(),
+      categoryName: json['categoryName'],  // Allow null
     );
   }
 }

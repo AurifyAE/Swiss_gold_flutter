@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -8,10 +10,8 @@ import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_alert.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_snackbar.dart';
-import 'package:swiss_gold/core/view_models/cart_view_model.dart';
 import 'package:swiss_gold/core/view_models/order_history_view_model.dart';
 import 'package:swiss_gold/core/view_models/product_view_model.dart';
-import 'package:swiss_gold/views/login/login_view.dart';
 
 class ProductView extends StatefulWidget {
   final List<String> prodImg;

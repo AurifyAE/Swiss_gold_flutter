@@ -1,3 +1,8 @@
+// ignore_for_file: deprecated_member_use
+
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -7,57 +12,53 @@ import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 import 'package:swiss_gold/core/view_models/product_view_model.dart';
 import 'package:swiss_gold/core/services/server_provider.dart';
 
-import '../../core/utils/money_format_heper.dart'; // Import GoldRateProvider
+import '../../core/utils/money_format_heper.dart';
+import '../../core/utils/widgets/snakbar.dart';
 
 class DeliveryDetailsView extends StatefulWidget {
   final Map<String, dynamic> orderData;
   final Function(Map<String, dynamic>) onConfirm;
 
   const DeliveryDetailsView({
-    Key? key,
+    super.key,
     required this.orderData,
     required this.onConfirm,
-  }) : super(key: key);
+  });
 
   @override
   State<DeliveryDetailsView> createState() => _DeliveryDetailsViewState();
 }
 
 class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
-  // Calculate total weight from booking data with real product weights
   double calculateTotalWeight(ProductViewModel productViewModel) {
     double totalWeight = 0.0;
     List bookingData = widget.orderData["bookingData"] as List;
-    
+
     for (var item in bookingData) {
       String productId = item["productId"];
       int quantity = item["quantity"] ?? 1;
-      
-      // Find product in product list by ID
+
       Product? product = productViewModel.productList.firstWhere(
         (p) => p.pId == productId,
-        // orElse: () => null,
       );
-      
-      if (product != null) {
-        // Use real product weight from the product model
-        double productWeight = product.weight.toDouble();
-        totalWeight += productWeight * quantity;
-      }
+
+      double productWeight = product.weight.toDouble();
+      totalWeight += productWeight * quantity;
     }
-    
+
     return totalWeight;
   }
 
-  // Calculate total amount using the new formula: (bidprice * purity * weight)
-  double calculateTotalAmount(ProductViewModel productViewModel, GoldRateProvider goldRateProvider) {
+  double calculateTotalAmount(
+      ProductViewModel productViewModel, GoldRateProvider goldRateProvider) {
     double totalAmount = 0.0;
     List bookingData = widget.orderData["bookingData"] as List;
-    
-    // Get bid price from GoldRateProvider
-    double bidPrice = goldRateProvider.goldData != null 
-      ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) / 31.103 * 3.674 
-      : 0.0;
+
+    double bidPrice = goldRateProvider.goldData != null
+        ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) /
+            31.103 *
+            3.674
+        : 0.0;
 
     for (var item in bookingData) {
       String productId = item["productId"];
@@ -65,37 +66,31 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
 
       Product? product = productViewModel.productList.firstWhere(
         (p) => p.pId == productId,
-        // orElse: () => null,
       );
 
-      if (product != null) {
-        double productPrice = 0.0;
-        // Use the new formula: (bidprice * purity * weight)
-        productPrice = bidPrice * (product.purity.toDouble() / 100) * product.weight.toDouble();
-        
-        // Add making charge if applicable
-        double makingCharge = product.makingCharge.toDouble();
-        
-        // Calculate the total for this product
-        double productTotal = productPrice * quantity;
-        
-        // Add making charge to the total if it exists
-        if (makingCharge > 0) {
-          productTotal += makingCharge * quantity;
-        }
-        
-        totalAmount += productTotal;
+      double productPrice = 0.0;
+
+      productPrice = bidPrice *
+          (product.purity.toDouble() / 100) *
+          product.weight.toDouble();
+
+      double makingCharge = product.makingCharge.toDouble();
+
+      double productTotal = productPrice * quantity;
+
+      if (makingCharge > 0) {
+        productTotal += makingCharge * quantity;
       }
+
+      totalAmount += productTotal;
     }
 
-    // Apply sell premium if applicable
     if (widget.orderData.containsKey('premium')) {
       String premiumStr = widget.orderData['premium'] ?? '0';
       double premium = double.tryParse(premiumStr) ?? 0.0;
       totalAmount += premium;
     }
-    
-    // Apply discount if applicable
+
     if (widget.orderData.containsKey('discount')) {
       String discountStr = widget.orderData['discount'] ?? '0';
       double discount = double.tryParse(discountStr) ?? 0.0;
@@ -105,7 +100,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
     return totalAmount > 0 ? totalAmount : 0.0;
   }
 
-  // Get product details by ID
   Product? getProductById(String productId, ProductViewModel productViewModel) {
     try {
       return productViewModel.productList.firstWhere((p) => p.pId == productId);
@@ -117,10 +111,10 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
   @override
   void initState() {
     super.initState();
-    
-    // Initialize GoldRateProvider connection on screen load if needed
+
     Future.microtask(() {
-      final goldRateProvider = Provider.of<GoldRateProvider>(context, listen: false);
+      final goldRateProvider =
+          Provider.of<GoldRateProvider>(context, listen: false);
       if (!goldRateProvider.isConnected || goldRateProvider.goldData == null) {
         goldRateProvider.initializeConnection();
       }
@@ -131,16 +125,18 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
   Widget build(BuildContext context) {
     final productViewModel = Provider.of<ProductViewModel>(context);
     final goldRateProvider = Provider.of<GoldRateProvider>(context);
-    
+
     final isGoldPayment = widget.orderData["paymentMethod"] == 'Gold';
     final totalWeight = calculateTotalWeight(productViewModel);
-    final totalAmount = calculateTotalAmount(productViewModel, goldRateProvider);
-    
-    // Get bid price from GoldRateProvider
-    final bidPrice = goldRateProvider.goldData != null 
-      ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) / 31.103 * 3.674 
-      : 0.0;
-    
+    final totalAmount =
+        calculateTotalAmount(productViewModel, goldRateProvider);
+
+    final bidPrice = goldRateProvider.goldData != null
+        ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) /
+            31.103 *
+            3.674
+        : 0.0;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
@@ -174,10 +170,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                 ),
               ),
               SizedBox(height: 20.h),
-              
-              // Display important information based on payment method
               if (isGoldPayment)
-                // Gold Payment Display
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(16.w),
@@ -208,7 +201,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         ),
                       ),
                       SizedBox(height: 8.h),
-                      // Display bid price from GoldRateProvider
                       Text(
                         'Bid Price: ${formatNumber(bidPrice)}',
                         style: TextStyle(
@@ -222,7 +214,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   ),
                 )
               else
-                // Cash Payment Display
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(16.w),
@@ -265,10 +256,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                     ],
                   ),
                 ),
-              
               SizedBox(height: 20.h),
-              
-              // Order details card
               Container(
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
@@ -278,7 +266,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Payment method
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -302,8 +289,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                       ],
                     ),
                     SizedBox(height: 12.h),
-                    
-                    // Delivery date
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -327,8 +312,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                       ],
                     ),
                     SizedBox(height: 12.h),
-                    
-                    // Total items
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -351,8 +334,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         ),
                       ],
                     ),
-                    
-                    // Show total gold weight only for Gold payment
                     if (isGoldPayment) ...[
                       SizedBox(height: 12.h),
                       Row(
@@ -377,7 +358,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           ),
                         ],
                       ),
-                      // Add gold bid price
                       SizedBox(height: 12.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -402,8 +382,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         ],
                       ),
                     ],
-                    
-                    // Show total amount only for Cash payment
                     if (!isGoldPayment) ...[
                       SizedBox(height: 12.h),
                       Row(
@@ -429,8 +407,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         ],
                       ),
                     ],
-                    
-                    // Show any applicable discount for cash payment
                     if (widget.orderData.containsKey('discount')) ...[
                       SizedBox(height: 12.h),
                       Row(
@@ -444,7 +420,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               fontSize: 16.sp,
                             ),
                           ),
-                          // Format the discount with commas
                           Text(
                             'AED ${double.tryParse(widget.orderData['discount'] ?? '0') != null ? formatNumber(double.parse(widget.orderData['discount'])) : widget.orderData['discount']}',
                             style: TextStyle(
@@ -457,8 +432,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         ],
                       ),
                     ],
-                    
-                    // Show any applicable premium for gold payment
                     if (widget.orderData.containsKey('premium')) ...[
                       SizedBox(height: 12.h),
                       Row(
@@ -472,7 +445,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               fontSize: 16.sp,
                             ),
                           ),
-                          // Format the premium with commas
                           Text(
                             'AED ${double.tryParse(widget.orderData['premium'] ?? '0') != null ? formatNumber(double.parse(widget.orderData['premium'])) : widget.orderData['premium']}',
                             style: TextStyle(
@@ -488,10 +460,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   ],
                 ),
               ),
-              
               SizedBox(height: 24.h),
-              
-              // Product details section
               Text(
                 'Product Details',
                 style: TextStyle(
@@ -502,8 +471,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                 ),
               ),
               SizedBox(height: 12.h),
-              
-              // Product list with more details
               ListView.builder(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
@@ -512,18 +479,18 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   final item = (widget.orderData["bookingData"] as List)[index];
                   final productId = item["productId"];
                   final quantity = item["quantity"] ?? 1;
-                  
-                  // Get actual product info
+
                   final product = getProductById(productId, productViewModel);
                   final productWeight = product?.weight.toDouble() ?? 0.0;
                   final productPurity = product?.purity.toDouble() ?? 0.0;
                   final makingCharge = product?.makingCharge.toDouble() ?? 0.0;
                   final productTitle = product?.title ?? 'Product #$productId';
-                  
-                  // Calculate price using new formula: (bidprice * purity * weight)
-                  final basePrice = bidPrice * (productPurity / 100) * productWeight;
-                  final itemValue = (basePrice * quantity) + (makingCharge * quantity);
-                  
+
+                  final basePrice =
+                      bidPrice * (productPurity / 100) * productWeight;
+                  final itemValue =
+                      (basePrice * quantity) + (makingCharge * quantity);
+
                   return Container(
                     margin: EdgeInsets.only(bottom: 10.h),
                     padding: EdgeInsets.all(12.w),
@@ -603,7 +570,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               ),
                             ),
                             Text(
-                              '${formatNumber(productPurity)}%',
+                              '${formatNumber(productPurity)}K',
                               style: TextStyle(
                                 color: UIColor.gold,
                                 fontFamily: 'Familiar',
@@ -635,7 +602,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ],
                         ),
-                        // Show unit price calculated with the new formula
                         SizedBox(height: 4.h),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -658,7 +624,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ],
                         ),
-                        // Making charge
                         if (makingCharge > 0) ...[
                           SizedBox(height: 4.h),
                           Row(
@@ -683,7 +648,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ],
                           ),
                         ],
-                        // Show item value
                         SizedBox(height: 4.h),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -707,21 +671,20 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ],
                         ),
-                      ],                                
+                      ],
                     ),
                   );
                 },
               ),
-              
               SizedBox(height: 30.h),
-              
-              // Summary card with display relevant to payment method
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10.r),
-                  color: isGoldPayment ? UIColor.gold.withOpacity(0.15) : UIColor.gold.withOpacity(0.1),
+                  color: isGoldPayment
+                      ? UIColor.gold.withOpacity(0.15)
+                      : UIColor.gold.withOpacity(0.1),
                   border: Border.all(color: UIColor.gold),
                 ),
                 child: Column(
@@ -737,8 +700,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                       ),
                     ),
                     SizedBox(height: 12.h),
-                    
-                    // For Gold payment, show total gold weight prominently
                     if (isGoldPayment) ...[
                       SizedBox(height: 12.h),
                       Row(
@@ -764,7 +725,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                           ),
                         ],
                       ),
-                      // Add bid price row to summary
                       SizedBox(height: 8.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -788,8 +748,6 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                         ],
                       ),
                     ],
-                    
-                    // For Cash payment, show total cash amount prominently
                     if (!isGoldPayment) ...[
                       SizedBox(height: 12.h),
                       Row(
@@ -819,10 +777,28 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   ],
                 ),
               ),
-              
               SizedBox(height: 30.h),
-              
-              // Confirm button
+              // Center(
+              //   child: CustomOutlinedBtn(
+              //     borderRadius: 12.sp,
+              //     borderColor: UIColor.gold,
+              //     padH: 12.w,
+              //     padV: 12.h,
+              //     width: 200.w,
+              //     onTapped: () {
+              //       widget.onConfirm({});
+
+              //       final productViewModel =
+              //           Provider.of<ProductViewModel>(context, listen: false);
+              //       productViewModel.clearQuantities();
+
+              //       Navigator.pop(context);
+              //     },
+              //     btnTextColor: UIColor.gold,
+              //     btnText: 'Confirm Order',
+              //   ),
+              // ),
+
               Center(
                 child: CustomOutlinedBtn(
                   borderRadius: 12.sp,
@@ -830,16 +806,139 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   padH: 12.w,
                   padV: 12.h,
                   width: 200.w,
-                  onTapped: () {
-                    // Call the onConfirm callback with an empty map
-                    widget.onConfirm({});
-                    
-                    // Reset product quantities in the ProductViewModel
-                    final productViewModel = Provider.of<ProductViewModel>(context, listen: false);
-                    productViewModel.clearQuantities();
-                    
-                    Navigator.pop(context);
-                  },
+             onTapped: () async {
+  // Show loading indicator
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(UIColor.gold),
+        ),
+      );
+    },
+  );
+  
+  try {
+    final productViewModel = Provider.of<ProductViewModel>(context, listen: false);
+    final goldRateProvider = Provider.of<GoldRateProvider>(context, listen: false);
+    
+    // Get the latest gold price
+    final double bidPrice = goldRateProvider.goldData != null
+      ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) / 31.103 * 3.674
+      : 0.0;
+    
+    // Create bookingData with fixed prices for each product
+    List<Map<String, dynamic>> bookingDataWithFixedPrices = [];
+    List bookingData = widget.orderData["bookingData"] as List;
+    
+    for (var item in bookingData) {
+      String productId = item["productId"];
+      int quantity = item["quantity"] ?? 1;
+      
+      Product product = productViewModel.productList.firstWhere(
+        (p) => p.pId == productId,
+      );
+      
+      // Calculate the fixed price for this product
+      double productWeight = product.weight.toDouble();
+      double productPurity = product.purity.toDouble();
+      double makingCharge = product.makingCharge.toDouble();
+      
+      // Calculate base price using the current bid price
+      double basePrice = bidPrice * (productPurity / 100) * productWeight;
+      double fixedPrice = basePrice + makingCharge;
+      
+      // Add to booking data with fixed price
+      bookingDataWithFixedPrices.add({
+        "productId": productId,
+        "quantity": quantity,
+        "fixedPrice": fixedPrice.round(),
+      });
+    }
+    
+    // Create payload for fixing the price
+    Map<String, dynamic> fixPricePayload = {
+      "bookingData": bookingDataWithFixedPrices,
+      "goldRate": bidPrice,
+    };
+    
+    log("Fix price payload: ${jsonEncode(fixPricePayload)}");
+    
+    // Fix the price first
+    final fixPriceResult = await productViewModel.fixPrice(fixPricePayload);
+    
+    if (fixPriceResult != null && fixPriceResult.success!) {
+      // If price fixing is successful, proceed with booking
+      // Create the final booking payload
+      final bookingPayload = {
+        ...widget.orderData,
+        "bookingData": bookingDataWithFixedPrices, // Use the bookingData with fixed prices
+        "goldRate": bidPrice,
+        "fixedAt": DateTime.now().toIso8601String(),
+      };
+      
+      // Book the products - ONLY MAKE THIS CALL ONCE
+      final bookingResult = await productViewModel.bookProducts(bookingPayload);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      if (bookingResult != null && bookingResult.success!) {
+        // CLEAR CART DATA HERE AFTER SUCCESSFUL BOOKING
+        productViewModel.clearQuantities();
+        
+        // Call the function from HomeView to clear booking data
+        widget.onConfirm({
+          "success": true, 
+          "bookingData": bookingResult
+        });
+        
+        // Show success message
+        showOrderStatusSnackBar(
+          context: context,
+          isSuccess: true,
+          message: 'Booking success',
+        );
+
+        // Navigate back to previous screen
+        Navigator.pop(context);
+      } else {
+        // Show error message
+        showOrderStatusSnackBar(
+          context: context,
+          isSuccess: false,
+          message: 'Booking failed',
+        );
+      }
+    } else {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show error message for price fixing
+       showOrderStatusSnackBar(
+        context: context,
+        isSuccess: false,
+        message: 'Booking failed',
+      );
+    }
+  } catch (e) {
+    // Close loading dialog
+    Navigator.of(context).pop();
+    
+    // Show general error
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'An error occurred: ${e.toString()}',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+},
                   btnTextColor: UIColor.gold,
                   btnText: 'Confirm Order',
                 ),

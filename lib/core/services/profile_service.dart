@@ -13,7 +13,7 @@ class ProfileService {
 
   static Future<CompanyProfileModel?> fetchCompanyProfile() async {
   try {
-    final adminId = '67c1a8978399ea3181f5cad9'; // or 'adminId' if that's the key
+    final adminId = '67f37dfe4831e0eb637d09f1'; // or 'adminId' if that's the key
     final url = 'https://api.nova.aurify.ae/user/get-profile/$adminId';
 
     var response = await client.get(

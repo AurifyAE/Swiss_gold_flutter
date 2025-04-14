@@ -4,7 +4,6 @@ import 'package:swiss_gold/core/models/cart_model.dart';
 import 'package:swiss_gold/core/models/message.dart';
 import 'package:swiss_gold/core/services/cart_service.dart';
 import 'package:swiss_gold/core/services/local_storage.dart';
-import 'package:swiss_gold/core/services/product_service.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/view_models/base_model.dart';
 
@@ -81,36 +80,41 @@ class CartViewModel extends BaseModel {
     return _messageModel;
   }
 
-  Future<MessageModel?> addToCart(Map<String, dynamic> payload) async {
-    setState(ViewState.loading);
-    _messageModel = await CartService.addToCart(payload);
-    setState(ViewState.idle);
-    notifyListeners();
-    return _messageModel;
+  // Future<MessageModel?> addToCart(Map<String, dynamic> payload) async {
+  //   setState(ViewState.loading);
+  //   _messageModel = await CartService.addToCart(payload);
+  //   setState(ViewState.idle);
+  //   notifyListeners();
+  //   return _messageModel;
+  // }
+
+Future incrementQuantity(Map<String, dynamic> payload, {index}) async {
+  _quantityState = ViewState.loading;
+  notifyListeners();
+  _messageModel = await CartService.incrementQuantity(payload);
+  
+  // Add null check before accessing _messageModel!.success
+  if (_messageModel != null && _messageModel!.success == true && index != null) {
+    _cartItemList[index].quantity = _cartItemList[index].quantity + 1;
   }
 
-  Future<void> incrementQuantity(Map<String, dynamic> payload, {index}) async {
-    _quantityState = ViewState.loading;
-    notifyListeners();
-    _messageModel = await CartService.incrementQuantity(payload);
-    if (_messageModel!.success == true && index!=null) {
-      _cartItemList[index].quantity = _cartItemList[index].quantity + 1;
-    }
+  _quantityState = ViewState.idle;
+  notifyListeners();
+  return _messageModel; // Return the message model for proper error handling
+}
 
-    _quantityState = ViewState.idle;
-    notifyListeners();
+Future decrementQuantity(Map<String, dynamic> payload, {index}) async {
+  _quantityState = ViewState.loading;
+  notifyListeners();
+  _messageModel = await CartService.decrementQuantity(payload);
+  
+  // Add null check before accessing _messageModel!.success
+  if (_messageModel != null && _messageModel!.success == true && index != null) {
+    _cartItemList[index].quantity = _cartItemList[index].quantity - 1;
   }
-
-  Future<MessageModel?> decrementQuantity(
-      Map<String, dynamic> payload, {index}) async {
-    _quantityState = ViewState.loading;
-    notifyListeners();
-    _messageModel = await CartService.decrementQuantity(payload);
-    if (_messageModel!.success == true) {
-      _cartItemList[index].quantity = _cartItemList[index].quantity - 1;
-    }
-    _quantityState = ViewState.idle;
-    notifyListeners();
-    return _messageModel;
-  }
+  
+  _quantityState = ViewState.idle;
+  notifyListeners();
+  return _messageModel;
+}
 }

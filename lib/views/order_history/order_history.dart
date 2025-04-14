@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+// ignore: unused_import
 import 'package:swiss_gold/core/models/order_model.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
@@ -270,39 +271,38 @@ class _OrderHistoryState extends State<OrderHistory> {
                                                         ),
                                                       ],
                                                     ),
-                                                    if (item.status == 'Rejected')
-                                                      Row(
-                                                        children: [
-                                                          Text(
-                                                            'Status:',
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          'Status:',
+                                                          style: TextStyle(
+                                                            color: UIColor.gold,
+                                                            fontSize: 16.sp,
+                                                            fontFamily: 'Familiar',
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 10.w),
+                                                        Container(
+                                                          padding: EdgeInsets.symmetric(
+                                                            horizontal: 5.w,
+                                                            vertical: 1.h,
+                                                          ),
+                                                          decoration: BoxDecoration(
+                                                            color: _getStatusColor(item.status),
+                                                            borderRadius:
+                                                                BorderRadius.circular(5.sp),
+                                                          ),
+                                                          child: Text(
+                                                            item.status,
                                                             style: TextStyle(
-                                                              color: UIColor.gold,
-                                                              fontSize: 16.sp,
+                                                              color: UIColor.black,
+                                                              fontSize: 9.sp,
                                                               fontFamily: 'Familiar',
                                                             ),
                                                           ),
-                                                          SizedBox(width: 10.w),
-                                                          Container(
-                                                            padding: EdgeInsets.symmetric(
-                                                              horizontal: 5.w,
-                                                              vertical: 1.h,
-                                                            ),
-                                                            decoration: BoxDecoration(
-                                                              color: Colors.red,
-                                                              borderRadius:
-                                                                  BorderRadius.circular(5.sp),
-                                                            ),
-                                                            child: Text(
-                                                              item.status,
-                                                              style: TextStyle(
-                                                                color: UIColor.white,
-                                                                fontSize: 9.sp,
-                                                                fontFamily: 'Familiar',
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ],
                                                 ),
                                               ),
@@ -318,16 +318,16 @@ class _OrderHistoryState extends State<OrderHistory> {
                                                     ),
                                                   ),
                                                   Row(
-                                                    spacing: 10,
                                                     children: [
                                                       Text(
-                                                        'Purity',
+                                                        'Purity:',
                                                         style: TextStyle(
                                                           color: UIColor.gold,
                                                           fontSize: 16.sp,
                                                           fontFamily: 'Familiar',
                                                         ),
                                                       ),
+                                                      SizedBox(width: 5.w),
                                                       Text(
                                                         '${item.product?.purity ?? 0}K',
                                                         style: TextStyle(
@@ -367,6 +367,22 @@ class _OrderHistoryState extends State<OrderHistory> {
         },
       ),
     );
+  }
+  
+  // Helper method to determine status color 
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Rejected':
+        return Colors.red;
+      case 'Processing':
+        return Colors.orange;
+      case 'Success':
+        return Colors.green;
+      case 'Approval Pending':
+        return Colors.blue;
+      default:
+        return UIColor.gold;
+    }
   }
   
   @override

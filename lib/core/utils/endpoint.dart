@@ -5,7 +5,7 @@ const String newBaseUrl = 'https://api.nova.aurify.ae/user';
 
 // const String oldAdminId = '67586119baf55a80a8277f01';
 
-const String adminId = '67c1a8978399ea3181f5cad9';
+const String adminId = '67f37dfe4831e0eb637d09f1';
 
 const String loginUrl = '$newBaseUrl/login/$adminId';
 
@@ -14,15 +14,15 @@ const String loginUrl = '$newBaseUrl/login/$adminId';
 
 const String getCartUrl = '$newBaseUrl/get-cart/{userId}';
 
-const String addToCartUrl = '$newBaseUrl/cart/$adminId/{userId}/{pId}';
+// const String addToCartUrl = '$newBaseUrl/cart/$adminId/{userId}/{pId}';
 
 const String deleteFromCartUrl = '$newBaseUrl/cart/$adminId/{userId}/{pId}';
 
 const String incrementQuantityUrl =
-    '$newBaseUrl/cart/increment/$adminId/{userId}/{pId}';
+    '$newBaseUrl/cart-increment/$adminId/{userId}/{pId}';
 
 const String decrementQuantityUrl =
-    '$newBaseUrl/cart/decrement/$adminId/{userId}/{pId}';
+    '$newBaseUrl/cart-decrement/$adminId/{userId}/{pId}';
 
 // const String getWishlistUrl = '$baseUrl/get-wishlist/{userId}';
 

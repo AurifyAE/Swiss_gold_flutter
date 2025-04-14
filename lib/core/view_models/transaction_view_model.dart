@@ -1,10 +1,15 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:swiss_gold/core/models/transaction_model.dart';
+import 'package:swiss_gold/core/models/user_model.dart'; // Add this import
 import 'package:swiss_gold/core/services/transaction_service.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
+import 'package:swiss_gold/core/services/local_storage.dart';
 
 class TransactionViewModel extends ChangeNotifier {
-  final TransactionService _transactionService = TransactionService();
+  late final TransactionService _transactionService;
+  UserModel? _user;
   
   ViewState _state = ViewState.idle;
   ViewState get state => _state;
@@ -29,6 +34,22 @@ class TransactionViewModel extends ChangeNotifier {
   bool get isAscending => _isAscending;
   
   bool get loadingMore => _paginationState == ViewState.loadingMore;
+  
+  bool _isGuest = false;
+  bool get isGuest => _isGuest;
+  
+  // Constructor that initializes the user and transaction service
+  TransactionViewModel({UserModel? user}) {
+    _user = user ?? UserModel(message: '', success: false);
+    _transactionService = TransactionService(user: _user!);
+  }
+  
+  // Method to update user
+  void updateUser(UserModel user) {
+    _user = user;
+    _transactionService = TransactionService(user: user);
+    notifyListeners();
+  }
   
   void setFilter(String filter) {
     _selectedFilter = filter;
@@ -62,6 +83,12 @@ class TransactionViewModel extends ChangeNotifier {
   }
   
   Future<void> fetchTransactions() async {
+    if (_user == null) {
+      _state = ViewState.error;
+      notifyListeners();
+      return;
+    }
+    
     _state = ViewState.loading;
     notifyListeners();
     
@@ -126,6 +153,17 @@ class TransactionViewModel extends ChangeNotifier {
       _paginationState = ViewState.error;
     }
     
+    notifyListeners();
+  }
+  
+  Future<void> checkGuestMode() async {
+    try {
+      _isGuest = await LocalStorage.getBool('isGuest') ?? false;
+      log('Guest mode: $_isGuest');
+    } catch (e) {
+      log('Error checking guest mode: ${e.toString()}');
+      _isGuest = false;
+    }
     notifyListeners();
   }
   

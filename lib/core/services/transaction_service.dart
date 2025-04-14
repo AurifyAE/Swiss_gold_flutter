@@ -3,14 +3,17 @@ import 'package:http/http.dart' as http;
 import 'package:swiss_gold/core/models/transaction_model.dart';
 import 'package:swiss_gold/core/services/secrete_key.dart';
 import 'package:swiss_gold/core/utils/endpoint.dart';
+import 'package:swiss_gold/core/models/user_model.dart'; // Add this import
 
 class TransactionService {
-  final String userId = '67c2d55c396a819a08684dad';
+  final UserModel user;
+  
+  TransactionService({required this.user});
 
   Future<TransactionResponse?> fetchTransactions({int page = 1}) async {
     try {
       final response = await http.get(
-        Uri.parse('$newBaseUrl/fetch-transtion/$userId?page=$page'),
+        Uri.parse('$newBaseUrl/fetch-transtion/${user.userId}?page=$page'),
         headers: {
           'Content-Type': 'application/json',
           'x-secret-key': secreteKey,

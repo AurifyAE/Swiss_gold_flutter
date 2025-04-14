@@ -9,7 +9,6 @@ import 'package:swiss_gold/core/view_models/company_profile_view_model.dart';
 import 'package:swiss_gold/views/support/widgets/contact_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:appinio_video_player/appinio_video_player.dart';
-import 'package:video_player/video_player.dart';
 
 class ContactView extends StatefulWidget {
   const ContactView({super.key});
@@ -109,7 +108,7 @@ class _ContactViewState extends State<ContactView> {
                     (index) => CategoryShimmer(),
                   )),
             );
-          }  else if (model.companyProfileModel == null) {
+          } else if (model.companyProfileModel == null) {
             return SizedBox.shrink();
           } else {
             return Column(
@@ -135,30 +134,37 @@ class _ContactViewState extends State<ContactView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ContactCard(
-                      icon: ImageAssets.whatsapp,
-                      title: 'Whatsapp',
-                      onTap: () async {
-                        await openUrl(
-                            'https://wa.me/${model.companyProfileModel!.data.contact}');
-                      },
-                    ),
-                    ContactCard(
-                      icon: ImageAssets.gmail,
-                      title: 'Gmail',
-                      onTap: () async {
-                        await openUrl(
-                            'mailto:${model.companyProfileModel!.data.email}'); // Gmail
-                      },
-                    ),
-                    ContactCard(
-                      icon: ImageAssets.phone,
-                      title: 'Contact',
-                      onTap: () {
-                        openUrl(
-                            'tel:${model.companyProfileModel!.data.contact.toString()}');
-                      },
-                    ),
+                   ContactCard(
+  icon: ImageAssets.whatsapp,
+  title: 'Whatsapp',
+  onTap: () async {
+    if (model.companyProfileModel?.userDetails.contact != null) {
+      await openUrl(
+          'https://wa.me/${model.companyProfileModel!.userDetails.contact}');
+    }
+  },
+),
+ContactCard(
+  icon: ImageAssets.gmail,
+  title: 'Gmail',
+  onTap: () async {
+    if (model.companyProfileModel?.userDetails.email != null && 
+        model.companyProfileModel!.userDetails.email.isNotEmpty) {
+      await openUrl(
+          'mailto:${model.companyProfileModel!.userDetails.email}');
+    }
+  },
+),
+ContactCard(
+  icon: ImageAssets.phone,
+  title: 'Contact',
+  onTap: () {
+    if (model.companyProfileModel?.userDetails.contact != null) {
+      openUrl(
+          'tel:${model.companyProfileModel!.userDetails.contact.toString()}');
+    }
+  },
+),
                   ],
                 ),
                 SizedBox(

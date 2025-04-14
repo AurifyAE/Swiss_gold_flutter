@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +10,7 @@ import 'package:swiss_gold/core/utils/money_format_heper.dart';
 class TransactionItem extends StatelessWidget {
   final Transaction transaction;
   
+  // ignore: use_super_parameters
   const TransactionItem({
     Key? key,
     required this.transaction,
