@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:swiss_gold/core/global_variables.dart';
 import 'package:swiss_gold/core/services/fcm_service.dart';
+import 'package:swiss_gold/core/services/notification_provider.dart';
 import 'package:swiss_gold/core/services/server_provider.dart';
 import 'package:swiss_gold/core/utils/theme.dart';
 import 'package:swiss_gold/core/view_models/auth_view_model.dart';
@@ -42,7 +43,7 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (context) => ProductViewModel()),
           ChangeNotifierProvider(create: (context) => CartViewModel()),
           ChangeNotifierProvider(create: (context) => ProfileViewModel()),
-          // ChangeNotifierProvider(create: (context) => WishlistViewModel()),
+          ChangeNotifierProvider(create: (context) => NotificationProvider()),
           ChangeNotifierProvider(create: (context) => CompanyProfileViewModel()),
           ChangeNotifierProvider(create: (context) => OrderHistoryViewModel()),
           ChangeNotifierProvider(create: (context) => TransactionViewModel()),
