@@ -31,10 +31,12 @@ dependencies:
   appinio_video_player: ^1.2.2
   cached_network_image: ^3.4.1
   carousel_slider: ^5.0.0
+  cloud_firestore: ^5.6.6
   cupertino_icons: ^1.0.8
   device_info_plus: ^9.0.0
   dio: ^5.8.0+1
   firebase_core: ^3.10.1
+  firebase_database: ^11.3.5
   firebase_messaging: ^15.2.1
   flutter:
     sdk: flutter

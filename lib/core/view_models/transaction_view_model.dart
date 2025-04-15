@@ -2,13 +2,13 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:swiss_gold/core/models/transaction_model.dart';
-import 'package:swiss_gold/core/models/user_model.dart'; // Add this import
+import 'package:swiss_gold/core/models/user_model.dart';
 import 'package:swiss_gold/core/services/transaction_service.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/services/local_storage.dart';
 
 class TransactionViewModel extends ChangeNotifier {
-  late final TransactionService _transactionService;
+  TransactionService? _transactionService;
   UserModel? _user;
   
   ViewState _state = ViewState.idle;
@@ -38,16 +38,59 @@ class TransactionViewModel extends ChangeNotifier {
   bool _isGuest = false;
   bool get isGuest => _isGuest;
   
-  // Constructor that initializes the user and transaction service
+  // Constructor that safely initializes with user ID validation
   TransactionViewModel({UserModel? user}) {
-    _user = user ?? UserModel(message: '', success: false);
-    _transactionService = TransactionService(user: _user!);
+    initializeWithUser(user);
+    checkGuestMode();
+  }
+  
+  // Initialize with user validation
+  void initializeWithUser(UserModel? user) {
+    // Only set user if it has a valid user ID
+    if (user != null && user.userId.isNotEmpty) {
+      _user = user;
+      _transactionService = TransactionService(user: user);
+      log('TransactionViewModel initialized with user ID: ${user.userId}');
+    } else {
+      log('Warning: Attempted to initialize TransactionViewModel with invalid user');
+      // Try to get user from local storage as fallback
+      _loadUserFromStorage();
+    }
+  }
+  
+  // Fallback method to load user from storage if needed
+  Future<void> _loadUserFromStorage() async {
+    try {
+      // Try to get user ID from local storage
+      final String? userId = await LocalStorage.getString('userId');
+      
+      if (userId != null && userId.isNotEmpty) {
+        log('Loaded user ID from storage: $userId');
+        // Create a basic user model with the ID
+        _user = UserModel(
+          userId: userId,
+          message: 'User loaded from storage',
+          success: true
+        );
+        _transactionService = TransactionService(user: _user!);
+      } else {
+        log('No user ID found in storage');
+      }
+    } catch (e) {
+      log('Error loading user from storage: $e');
+    }
   }
   
   // Method to update user
   void updateUser(UserModel user) {
+    if (user.userId.isEmpty) {
+      log('Warning: Attempted to update with invalid user ID');
+      return;
+    }
+    
     _user = user;
     _transactionService = TransactionService(user: user);
+    log('User updated with ID: ${user.userId}');
     notifyListeners();
   }
   
@@ -83,7 +126,15 @@ class TransactionViewModel extends ChangeNotifier {
   }
   
   Future<void> fetchTransactions() async {
-    if (_user == null) {
+    if (_user == null || _transactionService == null) {
+      log('Cannot fetch transactions: User or TransactionService is null');
+      _state = ViewState.error;
+      notifyListeners();
+      return;
+    }
+    
+    if (_user!.userId.isEmpty) {
+      log('Cannot fetch transactions: User ID is empty');
       _state = ViewState.error;
       notifyListeners();
       return;
@@ -93,7 +144,7 @@ class TransactionViewModel extends ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await _transactionService.fetchTransactions();
+      final response = await _transactionService!.fetchTransactions();
       
       if (response != null && response.success) {
         _transactionData = response.data;
@@ -111,7 +162,7 @@ class TransactionViewModel extends ChangeNotifier {
         _state = ViewState.error;
       }
     } catch (e) {
-      print('Error in transaction view model: $e');
+      log('Error in transaction view model: $e');
       _state = ViewState.error;
     }
     
@@ -119,6 +170,11 @@ class TransactionViewModel extends ChangeNotifier {
   }
   
   Future<void> loadMoreTransactions() async {
+    if (_user == null || _transactionService == null || _user!.userId.isEmpty) {
+      log('Cannot load more transactions: Invalid user configuration');
+      return;
+    }
+    
     if (_transactionData == null || 
         _paginationState == ViewState.loadingMore ||
         (pagination != null && pagination!.currentPage >= pagination!.totalPages)) {
@@ -130,7 +186,7 @@ class TransactionViewModel extends ChangeNotifier {
     
     try {
       final nextPage = pagination!.currentPage + 1;
-      final response = await _transactionService.fetchTransactions(page: nextPage);
+      final response = await _transactionService!.fetchTransactions(page: nextPage);
       
       if (response != null && response.success) {
         _transactionData = response.data;
@@ -149,7 +205,7 @@ class TransactionViewModel extends ChangeNotifier {
         _paginationState = ViewState.error;
       }
     } catch (e) {
-      print('Error loading more transactions: $e');
+      log('Error loading more transactions: $e');
       _paginationState = ViewState.error;
     }
     
@@ -168,6 +224,10 @@ class TransactionViewModel extends ChangeNotifier {
   }
   
   void refreshTransactions() {
+    if (_user == null || _transactionService == null || _user!.userId.isEmpty) {
+      log('Cannot refresh transactions: Invalid user configuration');
+      return;
+    }
     _transactions = [];
     fetchTransactions();
   }

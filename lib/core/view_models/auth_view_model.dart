@@ -15,9 +15,15 @@ class AuthViewModel extends BaseModel {
 
   Future<UserModel?> login(Map<String, dynamic> payload) async {
     setState(ViewState.loading);
-    _userModel = await AuthService.login(payload);
-    print('------------------------------------------------------------------>>>>>>>>>>>${_userModel!.userId}');
-
+    try {
+      _userModel = await AuthService.login(payload);
+      // Only log the ID if _userModel is not null
+      if (_userModel != null) {
+        print('------------------------------------------------------------------>>>>>>>>>>>${_userModel?.userId}');
+      }
+    } catch (e) {
+      log('Login error: ${e.toString()}');
+    }
     setState(ViewState.idle);
     return _userModel;
   }

@@ -15,23 +15,29 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await FcmService.setupFlutterNotifications();
   FcmService.showFlutterNotification(message);
 
-  print('Handling a background message ${message.data}');
+  print('Handling a background message ${message.messageId}');
+  print('Background message data: ${message.data}');
+  print('Background message notification: ${message.notification?.title}, ${message.notification?.body}');
 }
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingForegroundHandler(RemoteMessage message) async {
-  print('Handling a foreground message ${message.data}');
+  print('Handling a foreground message ${message.messageId}');
+  print('Foreground message data: ${message.data}');
+  print('Foreground message notification: ${message.notification?.title}, ${message.notification?.body}');
 
   FcmService.showFlutterNotification(message);
 }
 
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
+  print('Notification tapped in background with payload: ${notificationResponse.payload}');
   // handle action
 }
 
 class FcmService {
-  static late AndroidNotificationChannel channel;
+  static late AndroidNotificationChannel standardChannel;
+  static late AndroidNotificationChannel warningChannel;
   static late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
   static bool isFlutterLocalNotificationsInitialized = false;
@@ -44,53 +50,84 @@ class FcmService {
     } else {
       token = await FirebaseMessaging.instance.getToken();
     }
+    print('FCM Token: $token');
     return token;
   }
 
-
-
   static void showFlutterNotification(RemoteMessage message) {
     String jsonData = jsonEncode(message.data);
-
-    flutterLocalNotificationsPlugin.show(
-      message.hashCode,
-      message.data['title'],
-      message.data['body'],
-      payload: jsonData,
-      NotificationDetails(
+    
+    // Debug information
+    print('Showing notification for message ID: ${message.messageId}');
+    print('Message data: ${message.data}');
+    print('Message notification: ${message.notification?.title}, ${message.notification?.body}');
+    
+    // Get title and body from either data payload or notification payload
+    String? title = message.data['title'] ?? message.notification?.title;
+    String? body = message.data['body'] ?? message.notification?.body;
+    
+    // Determine notification type
+    String? notificationType = message.data['type'];
+    print('Notification type: $notificationType');
+    
+    // Choose appropriate channel based on notification type
+    AndroidNotificationChannel channel = standardChannel;
+    if (notificationType == 'warning') {
+      channel = warningChannel;
+      print('Using warning channel for notification');
+    } else {
+      print('Using standard channel for notification');
+    }
+    
+    // Only show notification if we have either title or body
+    if (title != null || body != null) {
+      // Configure actions for confirmation notifications
+      List<AndroidNotificationAction>? actions;
+      if (notificationType == 'confirmation') {
+        actions = <AndroidNotificationAction>[
+          AndroidNotificationAction(
+            'ACCEPT',
+            'Accept',
+            titleColor: Colors.green,
+            showsUserInterface: true,
+          ),
+          AndroidNotificationAction(
+            'DECLINE',
+            'Decline',
+            titleColor: Colors.red,
+            showsUserInterface: true,
+          ),
+        ];
+        print('Adding Accept/Decline actions to notification');
+      }
+      
+      flutterLocalNotificationsPlugin.show(
+        message.hashCode,
+        title,
+        body,
+        payload: jsonData,
+        NotificationDetails(
           android: AndroidNotificationDetails(
             channel.id,
             channel.name,
-            actions: message.data['type'] != null
-                ? <AndroidNotificationAction>[
-                    AndroidNotificationAction(
-                      'ACCEPT',
-                      'Accept',
-                      titleColor: Colors.green,
-                      // icon: DrawableResourceAndroidBitmap("ic_accept"),
-                      showsUserInterface: true,
-                    ),
-                    AndroidNotificationAction(
-                      'DECLINE',
-                      'Decline',
-                    
-                      titleColor: Colors.red,
-                      // icon: DrawableResourceAndroidBitmap("ic_reject"),
-                      showsUserInterface: true,
-                    ),
-                  ]
-                : null,
+            actions: actions,
             importance: Importance.max,
             priority: Priority.max,
             channelDescription: channel.description,
             icon: '@mipmap/ic_launcher',
           ),
           iOS: DarwinNotificationDetails(
-              presentAlert: true,
-              presentBadge: true,
-              presentBanner: true,
-              presentSound: true)),
-    );
+            presentAlert: true,
+            presentBadge: true,
+            presentBanner: true,
+            presentSound: true,
+          ),
+        ),
+      );
+      print('Notification displayed with title: $title, body: $body');
+    } else {
+      print('Warning: Received notification with no title or body - could not display');
+    }
   }
 
   static void requestPermission() {
@@ -98,30 +135,53 @@ class FcmService {
       alert: true,
       announcement: false,
       badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
+      carPlay: true,
+      criticalAlert: true,
+      provisional: true,
       sound: true,
-    );
+    ).then((settings) {
+      print('FCM permission status: ${settings.authorizationStatus}');
+    });
   }
 
   static Future<void> setupFlutterNotifications() async {
     if (isFlutterLocalNotificationsInitialized) {
+      print('Flutter notifications already initialized');
       return;
     }
-    channel = const AndroidNotificationChannel(
+    
+    print('Setting up Flutter notifications');
+    
+    // Set up standard channel for normal notifications
+    standardChannel = const AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
       description: 'This channel is used for important notifications.',
       importance: Importance.max,
     );
+    
+    // Set up warning channel with different settings
+    warningChannel = const AndroidNotificationChannel(
+      'warning_channel',
+      'Warning Notifications',
+      description: 'This channel is used for warning notifications.',
+      importance: Importance.high,
+      sound: RawResourceAndroidNotificationSound('notification_sound'),
+      enableVibration: true,
+    );
 
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-    await flutterLocalNotificationsPlugin
+    // Create notification channels
+    final androidPlugin = flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+            AndroidFlutterLocalNotificationsPlugin>();
+            
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(standardChannel);
+      await androidPlugin.createNotificationChannel(warningChannel);
+      print('Created notification channels');
+    }
 
     await FirebaseMessaging.instance
         .setForegroundNotificationPresentationOptions(
@@ -129,6 +189,7 @@ class FcmService {
       badge: true,
       sound: true,
     );
+    print('Set foreground notification presentation options');
 
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('mipmap/ic_launcher');
@@ -137,31 +198,49 @@ class FcmService {
       android: initializationSettingsAndroid,
       iOS: DarwinInitializationSettings(),
     );
+    
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse:
           (NotificationResponse notificationResponse) async {
-        Map<String, dynamic> fcmData =
-            jsonDecode(notificationResponse.payload!);
-        if (notificationResponse.actionId == 'ACCEPT') {
-
-          CartService.confirmQuantity({
-            'action': true,
-            'itemId': fcmData['itemId'],
-            'orderId': fcmData['orderId']
-          });
-        }
-        else if (notificationResponse.actionId == 'DECLINE') {
-          CartService.confirmQuantity({
-            'action': false,
-            'itemId': fcmData['itemId'],
-            'orderId': fcmData['orderId']
-          });
+        print('Notification response received with action: ${notificationResponse.actionId}');
+        print('Notification payload: ${notificationResponse.payload}');
+        
+        if (notificationResponse.payload != null) {
+          try {
+            Map<String, dynamic> fcmData =
+                jsonDecode(notificationResponse.payload!);
+            
+            if (notificationResponse.actionId == 'ACCEPT') {
+              print('Processing ACCEPT action for item: ${fcmData['itemId']}, order: ${fcmData['orderId']}');
+              CartService.confirmQuantity({
+                'action': true,
+                'itemId': fcmData['itemId'],
+                'orderId': fcmData['orderId']
+              });
+            }
+            else if (notificationResponse.actionId == 'DECLINE') {
+              print('Processing DECLINE action for item: ${fcmData['itemId']}, order: ${fcmData['orderId']}');
+              CartService.confirmQuantity({
+                'action': false,
+                'itemId': fcmData['itemId'],
+                'orderId': fcmData['orderId']
+              });
+            } else {
+              print('Notification tapped (no specific action)');
+              // Handle general notification tap if needed
+            }
+          } catch (e) {
+            print('Error processing notification response: $e');
+          }
         }
         return;
       },
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
+    
     isFlutterLocalNotificationsInitialized = true;
+    print('Flutter notifications initialization complete');
   }
 }
 

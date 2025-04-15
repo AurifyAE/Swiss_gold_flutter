@@ -14,6 +14,8 @@ import 'package:swiss_gold/core/utils/widgets/custom_txt_field.dart';
 import 'package:swiss_gold/core/view_models/auth_view_model.dart';
 import 'package:swiss_gold/views/bottom_nav/bottom_nav.dart';
 
+import '../../core/services/firebase_service.dart';
+
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
@@ -88,43 +90,59 @@ class _LoginViewState extends State<LoginView> {
                     log('📲 FCM Token: $token');
 
 
-                    Provider.of<AuthViewModel>(context, listen: false).login(
-                      {
-                        "contact": int.parse(mobileController.text),
-                        "password": passController.text,
-                        'token': token,
-                      },
+                    // Inside your onTap method in LoginView.dart
+Provider.of<AuthViewModel>(context, listen: false)
+    .login({
+      "contact": int.parse(mobileController.text),
+      "password": passController.text,
+      'token': token,
+    })
+    .then((response) async {
+      if (response == null) {
+        customSnackBar(
+          context: context, 
+          title: 'Login failed. Please try again.'
+        );
+        return;
+      }
+      
+      if (response.success) {
+        LocalStorage.setBool('isGuest', false);
+        FcmService.requestPermission();
+        
+        final userId = response.userId;
+        if (userId.isNotEmpty) {
+          // Save userId to local storage for future use
+          await LocalStorage.setString({'userId': userId});
+          
+          // Add FCM token to Firebase Realtime Database
+          if (token != null) {
+            try {
+              await FirebaseService().saveUserFcmToken(userId, token);
+              log('FCM token saved to Firebase for user: $userId');
+            } catch (e) {
+              log('Failed to save FCM token: $e');
+              // Optionally show a snackbar but don't block login
+            }
+          }
+        }
+        
+        customSnackBar(
+          context: context,
+          title: response.message,
+          bgColor: UIColor.gold,
+          width: 130.w
+        );
 
-                      
-                        
-                      
-                    ).then((response) async {
-                      // Fixed: Check if response is null before accessing properties
-                      if (response == null) {
-                        customSnackBar(
-                            context: context, title: 'Login failed. Please try again.');
-                        return;
-                      }
-                      
-                      if (response.success) {
-                        LocalStorage.setBool('isGuest', false);
-                        FcmService.requestPermission();
-                        customSnackBar(
-                            context: context,
-                            title: response.message,
-                            bgColor: UIColor.gold,
-                            width: 130.w);
-
-                        Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => BottomNav()),
-                            (route) => false);
-                      } else {
-                        customSnackBar(
-                            context: context, title: response.message);
-                      }
-                    });
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => BottomNav()),
+          (route) => false
+        );
+      } else {
+        customSnackBar(context: context, title: response.message);
+      }
+    });
                   }
                 },
                 child: Container(
