@@ -1,7 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:convert';
-import 'dart:developer';
+import 'dart:developer' as dev;
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -31,95 +32,129 @@ class DeliveryDetailsView extends StatefulWidget {
 
 class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
   double calculateTotalWeight(ProductViewModel productViewModel) {
-    double totalWeight = 0.0;
-    List bookingData = widget.orderData["bookingData"] as List;
+  double totalWeight = 0.0;
+  List bookingData = widget.orderData["bookingData"] as List;
+  
+  dev.log("Starting total weight calculation...");
 
-    for (var item in bookingData) {
-      String productId = item["productId"];
-      int quantity = item["quantity"] ?? 1;
+  for (var item in bookingData) {
+    String productId = item["productId"];
+    int quantity = item["quantity"] ?? 1;
 
-      Product? product = productViewModel.productList.firstWhere(
-        (p) => p.pId == productId,
-      );
+    Product? product = productViewModel.productList.firstWhere(
+      (p) => p.pId == productId,
+    );
 
-      double productWeight = product.weight.toDouble();
-      totalWeight += productWeight * quantity;
-    }
-
-    return totalWeight;
+    double productWeight = product.weight.toDouble();
+    totalWeight += productWeight * quantity;
+    
+    dev.log("Product $productId: weight=${productWeight}g × quantity=$quantity = ${productWeight * quantity}g");
   }
+
+  dev.log("Final total weight calculation: ${totalWeight}g");
+  return totalWeight;
+}
+
+double calculatePurityPower(dynamic purity) {
+  String purityStr = purity.toString();
+  int digitCount = purityStr.length;
+  double powerOfTen = pow(10, digitCount).toDouble();
+  double result = purity / powerOfTen;
+  
+  dev.log('🧮 Purity calculation: purity=$purity, digits=$digitCount, power=$powerOfTen, result=$result');
+  return result;
+}
 
   double calculateTotalAmount(
-      ProductViewModel productViewModel, GoldRateProvider goldRateProvider) {
-    double totalAmount = 0.0;
-    List bookingData = widget.orderData["bookingData"] as List;
+    ProductViewModel productViewModel, GoldRateProvider goldRateProvider) {
+  double totalAmount = 0.0;
+  List bookingData = widget.orderData["bookingData"] as List;
+  
+  dev.log("Starting total amount calculation...");
 
-    double bidPrice = goldRateProvider.goldData != null
-        ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) /
-            31.103 *
-            3.674
-        : 0.0;
+  double bidPrice = goldRateProvider.goldData != null
+      ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) /
+          31.103 *
+          3.674
+      : 0.0;
+      
+  dev.log("Current bid price: $bidPrice AED/g (conversion from troy oz)");
 
-    for (var item in bookingData) {
-      String productId = item["productId"];
-      int quantity = item["quantity"] ?? 1;
+  for (var item in bookingData) {
+    String productId = item["productId"];
+    int quantity = item["quantity"] ?? 1;
 
-      Product? product = productViewModel.productList.firstWhere(
-        (p) => p.pId == productId,
-      );
+    Product? product = productViewModel.productList.firstWhere(
+      (p) => p.pId == productId,
+    );
 
-      double productPrice = 0.0;
+    double productPrice = 0.0;
+    double purityFactor = calculatePurityPower(product.purity);
 
-      productPrice = bidPrice *
-          (product.purity.toDouble() / 100) *
-          product.weight.toDouble();
+    productPrice = bidPrice * purityFactor * product.weight.toDouble();
+    
+    dev.log("Product $productId base calculation: bidPrice=$bidPrice × purityFactor=$purityFactor × weight=${product.weight.toDouble()}g = $productPrice AED");
 
-      double makingCharge = product.makingCharge.toDouble();
+    double makingCharge = product.makingCharge.toDouble();
+    dev.log("Product $productId making charge: $makingCharge AED");
 
-      double productTotal = productPrice * quantity;
+    double productTotal = productPrice * quantity;
+    dev.log("Product $productId price × quantity($quantity): $productPrice × $quantity = $productTotal AED");
 
-      if (makingCharge > 0) {
-        productTotal += makingCharge * quantity;
-      }
-
-      totalAmount += productTotal;
+    if (makingCharge > 0) {
+      productTotal += makingCharge * quantity;
+      dev.log("Product $productId with making charge: $productTotal + (${makingCharge * quantity}) = ${productTotal + (makingCharge * quantity)} AED");
     }
 
-    if (widget.orderData.containsKey('premium')) {
-      String premiumStr = widget.orderData['premium'] ?? '0';
-      double premium = double.tryParse(premiumStr) ?? 0.0;
-      totalAmount += premium;
-    }
-
-    if (widget.orderData.containsKey('discount')) {
-      String discountStr = widget.orderData['discount'] ?? '0';
-      double discount = double.tryParse(discountStr) ?? 0.0;
-      totalAmount -= discount;
-    }
-
-    return totalAmount > 0 ? totalAmount : 0.0;
+    totalAmount += productTotal;
+    dev.log("Running total after adding product $productId: $totalAmount AED");
   }
 
-  Product? getProductById(String productId, ProductViewModel productViewModel) {
-    try {
-      return productViewModel.productList.firstWhere((p) => p.pId == productId);
-    } catch (e) {
-      return null;
+  if (widget.orderData.containsKey('premium')) {
+    String premiumStr = widget.orderData['premium'] ?? '0';
+    double premium = double.tryParse(premiumStr) ?? 0.0;
+    totalAmount += premium;
+    dev.log("Adding premium: $premium AED. New total: $totalAmount AED");
+  }
+
+  if (widget.orderData.containsKey('discount')) {
+    String discountStr = widget.orderData['discount'] ?? '0';
+    double discount = double.tryParse(discountStr) ?? 0.0;
+    totalAmount -= discount;
+    dev.log("Subtracting discount: $discount AED. New total: $totalAmount AED");
+  }
+
+  dev.log("Final total amount: ${totalAmount > 0 ? totalAmount : 0.0} AED");
+  return totalAmount > 0 ? totalAmount : 0.0;
+}
+
+Product? getProductById(String productId, ProductViewModel productViewModel) {
+  try {
+    Product product = productViewModel.productList.firstWhere((p) => p.pId == productId);
+    dev.log("Retrieved product ID: $productId - Title: ${product.title}, Weight: ${product.weight}g, Purity: ${product.purity}");
+    return product;
+  } catch (e) {
+    dev.log("Failed to retrieve product ID: $productId - Error: ${e.toString()}");
+    return null;
+  }
+}
+
+@override
+void initState() {
+  super.initState();
+  dev.log("Initializing DeliveryDetailsView");
+
+  Future.microtask(() {
+    final goldRateProvider =
+        Provider.of<GoldRateProvider>(context, listen: false);
+    if (!goldRateProvider.isConnected || goldRateProvider.goldData == null) {
+      dev.log("Initializing gold rate connection - Current status: isConnected=${goldRateProvider.isConnected}, hasData=${goldRateProvider.goldData != null}");
+      goldRateProvider.initializeConnection();
+    } else {
+      dev.log("Gold rate already connected - Current bid: ${goldRateProvider.goldData!['bid']}");
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    Future.microtask(() {
-      final goldRateProvider =
-          Provider.of<GoldRateProvider>(context, listen: false);
-      if (!goldRateProvider.isConnected || goldRateProvider.goldData == null) {
-        goldRateProvider.initializeConnection();
-      }
-    });
-  }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -131,11 +166,17 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
     final totalAmount =
         calculateTotalAmount(productViewModel, goldRateProvider);
 
+    dev.log("Payment method: ${isGoldPayment ? 'Gold' : 'Cash'}");
+  dev.log("Total weight summary: $totalWeight g");
+  dev.log("Total amount summary: $totalAmount AED");
+
     final bidPrice = goldRateProvider.goldData != null
         ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) /
             31.103 *
             3.674
         : 0.0;
+
+    dev.log("Current bid price for display: $bidPrice AED/g");
 
     return Scaffold(
       appBar: AppBar(
@@ -477,19 +518,28 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                 itemCount: (widget.orderData["bookingData"] as List).length,
                 itemBuilder: (context, index) {
                   final item = (widget.orderData["bookingData"] as List)[index];
-                  final productId = item["productId"];
-                  final quantity = item["quantity"] ?? 1;
+  final productId = item["productId"];
+  final quantity = item["quantity"] ?? 1;
 
-                  final product = getProductById(productId, productViewModel);
-                  final productWeight = product?.weight.toDouble() ?? 0.0;
-                  final productPurity = product?.purity.toDouble() ?? 0.0;
-                  final makingCharge = product?.makingCharge.toDouble() ?? 0.0;
-                  final productTitle = product?.title ?? 'Product #$productId';
+  final product = getProductById(productId, productViewModel);
+  final productWeight = product?.weight.toDouble() ?? 0.0;
+  final productPurity = product?.purity.toDouble() ?? 0.0;
+  final makingCharge = product?.makingCharge.toDouble() ?? 0.0;
+  final productTitle = product?.title ?? 'Product #$productId';
 
-                  final basePrice =
-                      bidPrice * (productPurity / 100) * productWeight;
-                  final itemValue =
-                      (basePrice * quantity) + (makingCharge * quantity);
+  dev.log("Product #$index - ID: $productId, Title: $productTitle");
+  dev.log("Product #$index - Weight: $productWeight g, Purity: $productPurity, Making Charge: $makingCharge AED");
+
+  final purityFactor = calculatePurityPower(productPurity);
+  dev.log("Product #$index - Purity factor: $purityFactor (calculated from $productPurity)");
+  
+  final basePrice = totalAmount;
+  dev.log("Product #$index - Base price calculation: $bidPrice × $productWeight × $purityFactor = $basePrice AED");
+  
+  final itemValue = (totalAmount * quantity) + (makingCharge * quantity);
+  dev.log("Product #$index - Item value: ($basePrice × $quantity) + ($makingCharge × $quantity) = $itemValue AED");
+
+                      dev.log("Product #$index - Item value: ($basePrice × $quantity) + ($makingCharge × $quantity) = $itemValue AED");
 
                   return Container(
                     margin: EdgeInsets.only(bottom: 10.h),
@@ -615,7 +665,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                               ),
                             ),
                             Text(
-                              'AED ${formatNumber(basePrice)}',
+                              'AED ${formatNumber(totalAmount)}',
                               style: TextStyle(
                                 color: UIColor.gold,
                                 fontFamily: 'Familiar',
@@ -828,27 +878,36 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
     final double bidPrice = goldRateProvider.goldData != null
       ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) / 31.103 * 3.674
       : 0.0;
+
+      dev.log("Final order submission - Current bid price: $bidPrice AED/g");
     
     // Create bookingData with fixed prices for each product
     List<Map<String, dynamic>> bookingDataWithFixedPrices = [];
     List bookingData = widget.orderData["bookingData"] as List;
     
-    for (var item in bookingData) {
-      String productId = item["productId"];
-      int quantity = item["quantity"] ?? 1;
-      
-      Product product = productViewModel.productList.firstWhere(
-        (p) => p.pId == productId,
-      );
-      
-      // Calculate the fixed price for this product
-      double productWeight = product.weight.toDouble();
-      double productPurity = product.purity.toDouble();
-      double makingCharge = product.makingCharge.toDouble();
-      
-      // Calculate base price using the current bid price
-      double basePrice = bidPrice * (productPurity / 100) * productWeight;
-      double fixedPrice = basePrice + makingCharge;
+     for (var item in bookingData) {
+    String productId = item["productId"];
+    int quantity = item["quantity"] ?? 1;
+    
+    Product product = productViewModel.productList.firstWhere(
+      (p) => p.pId == productId,
+    );
+    
+    // Calculate the fixed price for this product
+    double productWeight = product.weight.toDouble();
+    double productPurity = product.purity.toDouble();
+    double purityFactor = calculatePurityPower(productPurity);
+    double makingCharge = product.makingCharge.toDouble();
+    
+    dev.log("Order item - Product ID: $productId, Weight: $productWeight g, Purity: $productPurity, PurityFactor: $purityFactor, Making: $makingCharge AED");
+    
+    // Calculate base price using the current bid price
+    double basePrice = bidPrice * purityFactor * productWeight;
+    dev.log("Order item - Base price calculation: $bidPrice × $purityFactor × $productWeight = $basePrice AED");
+    
+    double fixedPrice = basePrice + makingCharge;
+  dev.log("Order item - Fixed price: $basePrice + $makingCharge = $fixedPrice AED");
+      //  orderTotal += fixedPrice * quantity;
       
       // Add to booking data with fixed price
       bookingDataWithFixedPrices.add({
@@ -856,7 +915,10 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
         "quantity": quantity,
         "fixedPrice": fixedPrice.round(),
       });
+      dev.log("Order item - Final price (rounded): ${fixedPrice.round()} AED × $quantity");
+
     }
+    // log("Order submission - Total value: $orderTotal AED");
     
     // Create payload for fixing the price
     Map<String, dynamic> fixPricePayload = {
@@ -864,7 +926,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
       "goldRate": bidPrice,
     };
     
-    log("Fix price payload: ${jsonEncode(fixPricePayload)}");
+    dev.log("Fix price payload: ${jsonEncode(fixPricePayload)}");
     
     // Fix the price first
     final fixPriceResult = await productViewModel.fixPrice(fixPricePayload);

@@ -19,6 +19,11 @@ class BalanceCard extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    // Determine which gold value to display
+    final displayGoldValue = balanceInfo.availableGold == 0 
+        ? balanceInfo.totalGoldBalance 
+        : balanceInfo.availableGold;
+    
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -34,7 +39,7 @@ class BalanceCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 18.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -92,7 +97,7 @@ class BalanceCard extends StatelessWidget {
                         child: Icon(
                           Icons.savings,
                           color: UIColor.gold,
-                          size: 18.r,
+                          size: 12.r,
                         ),
                       ),
                       SizedBox(width: 12.w),
@@ -108,13 +113,17 @@ class BalanceCard extends StatelessWidget {
                             ),
                           ),
                           SizedBox(height: 2.h),
-                          Text(
-                            '${balanceInfo.availableGold.toStringAsFixed(3)} g',
-                            style: TextStyle(
-                              fontFamily: 'Familiar',
-                              color: UIColor.gold,
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.bold,
+                          SizedBox(
+                            width: 100,
+                            child: Text(
+                              '${displayGoldValue.toStringAsFixed(2)} g',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Familiar',
+                                color: UIColor.gold,
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -146,7 +155,7 @@ class BalanceCard extends StatelessWidget {
                         child: Icon(
                           Icons.account_balance_wallet,
                           color: UIColor.gold,
-                          size: 18.r,
+                          size: 12.r,
                         ),
                       ),
                       SizedBox(width: 12.w),
@@ -162,14 +171,33 @@ class BalanceCard extends StatelessWidget {
                             ),
                           ),
                           SizedBox(height: 2.h),
-                          Text(
-                            'AED ${formatNumber(balanceInfo.cashBalance)}',
-                            style: TextStyle(
-                              fontFamily: 'Familiar',
-                              color: UIColor.gold,
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'AED ',
+                                overflow: TextOverflow.clip, 
+                                style: TextStyle(
+                                  fontFamily: 'Familiar',
+                                  color: UIColor.gold,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 100,
+                                child: Text(
+                                  ' ${formatNumber(balanceInfo.cashBalance) }',
+                                  overflow: TextOverflow.ellipsis,  
+                                  style: TextStyle(
+                                    fontFamily: 'Familiar',
+                                    color: UIColor.gold,
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

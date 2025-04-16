@@ -181,8 +181,11 @@ class ProductViewModel extends BaseModel {
 
       log('Fetching products with adminId: $finalAdminId, categoryId: $finalCategoryId, page: $pageIndex');
 
-      final productsData =
-          await ProductService.fetchProducts(finalAdminId, finalCategoryId);
+     final productsData = await ProductService.fetchProducts(
+      adminId ?? _adminId,
+      categoryId ?? _categoryId
+    );
+
       log('API returned ${productsData.length} products');
 
       if (pageIndex == "0") {

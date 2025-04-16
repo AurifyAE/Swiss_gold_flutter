@@ -73,6 +73,7 @@ class TransactionViewModel extends ChangeNotifier {
           success: true
         );
         _transactionService = TransactionService(user: _user!);
+        log('TransactionService created with user ID: $userId');
       } else {
         log('No user ID found in storage');
       }
@@ -124,24 +125,34 @@ class TransactionViewModel extends ChangeNotifier {
     }
     return _transactions;
   }
+
+Future<bool> ensureUserInitialized() async {
+  // If already initialized, return true
+  if (_user != null && _transactionService != null && _user!.userId.isNotEmpty) {
+    return true;
+  }
   
-  Future<void> fetchTransactions() async {
-    if (_user == null || _transactionService == null) {
-      log('Cannot fetch transactions: User or TransactionService is null');
-      _state = ViewState.error;
-      notifyListeners();
-      return;
-    }
-    
-    if (_user!.userId.isEmpty) {
-      log('Cannot fetch transactions: User ID is empty');
-      _state = ViewState.error;
-      notifyListeners();
-      return;
-    }
-    
-    _state = ViewState.loading;
+  // Try to load from storage
+  await _loadUserFromStorage();
+  
+  // Check if successfully initialized after loading
+  return _user != null && _transactionService != null && _user!.userId.isNotEmpty;
+}
+  
+Future<void> fetchTransactions() async {
+  // First ensure user is initialized
+  bool isInitialized = await ensureUserInitialized();
+  
+  if (!isInitialized) {
+    log('Cannot fetch transactions: Failed to initialize user');
+    _state = ViewState.error;
     notifyListeners();
+    return;
+  }
+  
+  // Rest of your existing fetchTransactions code...
+  _state = ViewState.loading;
+  notifyListeners();
     
     try {
       final response = await _transactionService!.fetchTransactions();

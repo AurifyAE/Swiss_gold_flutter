@@ -28,25 +28,26 @@ class MoreView extends StatefulWidget {
 class _MoreViewState extends State<MoreView> {
   bool isGuestUser = false;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final cartViewModel = Provider.of<CartViewModel>(context, listen: false);
-      final transactionModel = Provider.of<TransactionViewModel>(context, listen: false);
-      
-      // Check guest mode
-      cartViewModel.checkGuestMode().then((_) {
-        setState(() {
-          isGuestUser = cartViewModel.isGuest ?? false;
-        });
-        
-        // Only fetch transactions if not a guest
-        if (!isGuestUser) {
-          transactionModel.fetchTransactions();
-        }
-      });
+ @override
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final cartViewModel = Provider.of<CartViewModel>(context, listen: false);
+    final transactionModel = Provider.of<TransactionViewModel>(context, listen: false);
+    
+    // First check guest mode
+    await cartViewModel.checkGuestMode();
+    
+    setState(() {
+      isGuestUser = cartViewModel.isGuest ?? false;
     });
+    
+    // Only fetch transactions if not a guest
+    if (!isGuestUser) {
+      // The updated fetchTransactions will handle initialization
+      transactionModel.fetchTransactions();
+    }
+  });
   }
 
   @override

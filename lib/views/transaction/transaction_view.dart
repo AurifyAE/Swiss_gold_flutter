@@ -21,24 +21,31 @@ class TransactionHistoryView extends StatefulWidget {
 }
 
 class _TransactionHistoryViewState extends State<TransactionHistoryView> {
+   bool isGuestUser = false;
   final ScrollController _scrollController = ScrollController();
   final List<String> filters = ['All', 'Gold', 'Cash', 'Credit', 'Debit'];
   
-  @override
+
+@override
 void initState() {
   super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
     // Check login status from CartViewModel first before fetching transactions
-    final cartModel = context.read<CartViewModel>();
-    final transactionModel = context.read<TransactionViewModel>();
+   final cartViewModel = Provider.of<CartViewModel>(context, listen: false);
+    final transactionModel = Provider.of<TransactionViewModel>(context, listen: false);
     
     // First check guest status from CartViewModel
-    cartModel.checkGuestMode().then((_) {
-      if (!(cartModel.isGuest ?? false)) {
-        transactionModel.fetchTransactions();
-      }
+setState(() {
+      isGuestUser = cartViewModel.isGuest ?? false;
     });
+    
+    // Only fetch transactions if not a guest
+    if (!isGuestUser) {
+      // The updated fetchTransactions will handle initialization
+      transactionModel.fetchTransactions();
+    }
   });
+  // });
   
   _scrollController.addListener(() {
     if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
@@ -81,7 +88,7 @@ void initState() {
             icon: Icon(Icons.refresh, color: UIColor.gold),
             onPressed: () {
               final model = context.read<TransactionViewModel>();
-              if (!model.isGuest) {
+              if (!isGuestUser) {
                 model.refreshTransactions();
               }
             },
@@ -91,7 +98,7 @@ void initState() {
       body: Consumer<TransactionViewModel>(
         builder: (context, model, child) {
           // Check if user is a guest
-          final bool isGuestUser = model.isGuest;
+          // final bool isGuestUser = model.isGuest;
           
           // If user is a guest, show login UI
           if (isGuestUser) {
