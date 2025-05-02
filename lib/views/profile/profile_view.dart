@@ -12,6 +12,8 @@ import 'package:swiss_gold/core/view_models/profile_view_model.dart';
 import 'package:swiss_gold/views/login/login_view.dart';
 import 'package:swiss_gold/views/profile/change_password_view.dart';
 
+import '../../core/view_models/auth_view_model.dart';
+
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
 
@@ -180,6 +182,9 @@ class _ProfileViewState extends State<ProfileView>
                                         'isGuest'
                                       ]).then(
                                         (_) {
+                                          final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    authViewModel.logout();
+
                                           Navigator.pushAndRemoveUntil(
                                               // ignore: use_build_context_synchronously
                                               context,

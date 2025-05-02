@@ -2,14 +2,12 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:swiss_gold/core/models/transaction_model.dart';
-import 'package:swiss_gold/core/models/user_model.dart';
 import 'package:swiss_gold/core/services/transaction_service.dart';
 import 'package:swiss_gold/core/utils/enum/view_state.dart';
 import 'package:swiss_gold/core/services/local_storage.dart';
 
 class TransactionViewModel extends ChangeNotifier {
-  TransactionService? _transactionService;
-  UserModel? _user;
+  late TransactionService _transactionService;
   
   ViewState _state = ViewState.idle;
   ViewState get state => _state;
@@ -38,61 +36,11 @@ class TransactionViewModel extends ChangeNotifier {
   bool _isGuest = false;
   bool get isGuest => _isGuest;
   
-  // Constructor that safely initializes with user ID validation
-  TransactionViewModel({UserModel? user}) {
-    initializeWithUser(user);
+  // Simplified constructor - no longer needs UserModel
+  TransactionViewModel() {
+    _transactionService = TransactionService();
+    log('TransactionViewModel initialized with new TransactionService');
     checkGuestMode();
-  }
-  
-  // Initialize with user validation
-  void initializeWithUser(UserModel? user) {
-    // Only set user if it has a valid user ID
-    if (user != null && user.userId.isNotEmpty) {
-      _user = user;
-      _transactionService = TransactionService(user: user);
-      log('TransactionViewModel initialized with user ID: ${user.userId}');
-    } else {
-      log('Warning: Attempted to initialize TransactionViewModel with invalid user');
-      // Try to get user from local storage as fallback
-      _loadUserFromStorage();
-    }
-  }
-  
-  // Fallback method to load user from storage if needed
-  Future<void> _loadUserFromStorage() async {
-    try {
-      // Try to get user ID from local storage
-      final String? userId = await LocalStorage.getString('userId');
-      
-      if (userId != null && userId.isNotEmpty) {
-        log('Loaded user ID from storage: $userId');
-        // Create a basic user model with the ID
-        _user = UserModel(
-          userId: userId,
-          message: 'User loaded from storage',
-          success: true
-        );
-        _transactionService = TransactionService(user: _user!);
-        log('TransactionService created with user ID: $userId');
-      } else {
-        log('No user ID found in storage');
-      }
-    } catch (e) {
-      log('Error loading user from storage: $e');
-    }
-  }
-  
-  // Method to update user
-  void updateUser(UserModel user) {
-    if (user.userId.isEmpty) {
-      log('Warning: Attempted to update with invalid user ID');
-      return;
-    }
-    
-    _user = user;
-    _transactionService = TransactionService(user: user);
-    log('User updated with ID: ${user.userId}');
-    notifyListeners();
   }
   
   void setFilter(String filter) {
@@ -125,37 +73,13 @@ class TransactionViewModel extends ChangeNotifier {
     }
     return _transactions;
   }
-
-Future<bool> ensureUserInitialized() async {
-  // If already initialized, return true
-  if (_user != null && _transactionService != null && _user!.userId.isNotEmpty) {
-    return true;
-  }
   
-  // Try to load from storage
-  await _loadUserFromStorage();
-  
-  // Check if successfully initialized after loading
-  return _user != null && _transactionService != null && _user!.userId.isNotEmpty;
-}
-  
-Future<void> fetchTransactions() async {
-  // First ensure user is initialized
-  bool isInitialized = await ensureUserInitialized();
-  
-  if (!isInitialized) {
-    log('Cannot fetch transactions: Failed to initialize user');
-    _state = ViewState.error;
+  Future<void> fetchTransactions() async {
+    _state = ViewState.loading;
     notifyListeners();
-    return;
-  }
-  
-  // Rest of your existing fetchTransactions code...
-  _state = ViewState.loading;
-  notifyListeners();
     
     try {
-      final response = await _transactionService!.fetchTransactions();
+      final response = await _transactionService.fetchTransactions();
       
       if (response != null && response.success) {
         _transactionData = response.data;
@@ -181,11 +105,6 @@ Future<void> fetchTransactions() async {
   }
   
   Future<void> loadMoreTransactions() async {
-    if (_user == null || _transactionService == null || _user!.userId.isEmpty) {
-      log('Cannot load more transactions: Invalid user configuration');
-      return;
-    }
-    
     if (_transactionData == null || 
         _paginationState == ViewState.loadingMore ||
         (pagination != null && pagination!.currentPage >= pagination!.totalPages)) {
@@ -197,7 +116,7 @@ Future<void> fetchTransactions() async {
     
     try {
       final nextPage = pagination!.currentPage + 1;
-      final response = await _transactionService!.fetchTransactions(page: nextPage);
+      final response = await _transactionService.fetchTransactions(page: nextPage);
       
       if (response != null && response.success) {
         _transactionData = response.data;
@@ -234,11 +153,34 @@ Future<void> fetchTransactions() async {
     notifyListeners();
   }
   
-  void refreshTransactions() {
-    if (_user == null || _transactionService == null || _user!.userId.isEmpty) {
-      log('Cannot refresh transactions: Invalid user configuration');
-      return;
+  Future<Transaction?> fetchTransactionById(String transactionId) async {
+    try {
+      return await _transactionService.fetchTransactionById(transactionId);
+    } catch (e) {
+      log('Error fetching transaction details: $e');
+      return null;
     }
+  }
+  
+  Future<BalanceInfo?> fetchBalance() async {
+    try {
+      return await _transactionService.fetchBalance();
+    } catch (e) {
+      log('Error fetching balance: $e');
+      return null;
+    }
+  }
+  
+  Future<Summary?> fetchTransactionSummary() async {
+    try {
+      return await _transactionService.fetchTransactionSummary();
+    } catch (e) {
+      log('Error fetching transaction summary: $e');
+      return null;
+    }
+  }
+  
+  void refreshTransactions() {
     _transactions = [];
     fetchTransactions();
   }

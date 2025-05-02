@@ -1,65 +1,37 @@
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
-// import 'package:swiss_gold/core/models/transaction_model.dart';
-// import 'package:swiss_gold/core/services/secrete_key.dart';
-// import 'package:swiss_gold/core/utils/endpoint.dart';
-// import 'package:swiss_gold/core/models/user_model.dart'; // Add this import
-
-// class TransactionService {
-//   final UserModel user;
-  
-//   TransactionService({required this.user});
-
-//   Future<TransactionResponse?> fetchTransactions({int page = 1}) async {
-//     try {
-//       final response = await http.get(
-//         Uri.parse('$newBaseUrl/fetch-transtion/${user.userId}?page=$page'),
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'x-secret-key': secreteKey,
-//         },
-//       );
-
-//       if (response.statusCode == 200) {
-//         final decodedResponse = jsonDecode(response.body);
-//         return TransactionResponse.fromJson(decodedResponse);
-//       } else {
-//         print('Failed to fetch transactions: ${response.statusCode}');
-//         return null;
-//       }
-//     } catch (e) {
-//       print('Error fetching transactions: $e');
-//       return null;
-//     }
-//   }
-// }
-
-
 import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:swiss_gold/core/models/transaction_model.dart';
-import 'package:swiss_gold/core/models/user_model.dart';
 import 'package:swiss_gold/core/services/secrete_key.dart';
 import 'package:swiss_gold/core/utils/endpoint.dart';
+import 'package:swiss_gold/core/services/local_storage.dart'; // Make sure to import local storage
 
 class TransactionService {
-  final UserModel user;
+  // No longer requiring UserModel in constructor
+  TransactionService() {
+    log('TransactionService initialized');
+  }
   
-  TransactionService({required this.user}) {
-    log('TransactionService initialized with user ID: ${user.userId}');
+  // Helper method to get userId from local storage
+  Future<String> _getUserId() async {
+    final userId = await LocalStorage.getString('userId') ?? '';
+    if (userId.isEmpty) {
+      log('Warning: User ID from local storage is empty');
+    }
+    return userId;
   }
 
   Future<TransactionResponse?> fetchTransactions({int page = 1, int limit = 10}) async {
-    if (user.userId.isEmpty) {
+    final userId = await _getUserId();
+    if (userId.isEmpty) {
       log('Cannot fetch transactions: User ID is empty');
       return null;
     }
     
     try {
-      log('Fetching transactions for user: ${user.userId}, page: $page');
+      log('Fetching transactions for user: $userId, page: $page');
       
-      final Uri uri = Uri.parse('$newBaseUrl/fetch-transtion/${user.userId}')
+      final Uri uri = Uri.parse('$newBaseUrl/fetch-transtion/$userId')
         .replace(queryParameters: {
           'page': '$page',
           'limit': '$limit'
@@ -69,7 +41,6 @@ class TransactionService {
         uri,
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer ${user.token ?? ""}',
           'x-secret-key': secreteKey,
         },
       );
@@ -91,7 +62,8 @@ class TransactionService {
   
   // Method to fetch a specific transaction by ID
   Future<Transaction?> fetchTransactionById(String transactionId) async {
-    if (user.userId.isEmpty || transactionId.isEmpty) {
+    final userId = await _getUserId();
+    if (userId.isEmpty || transactionId.isEmpty) {
       log('Cannot fetch transaction: User ID or Transaction ID is empty');
       return null;
     }
@@ -103,7 +75,6 @@ class TransactionService {
         Uri.parse('$newBaseUrl/transaction/$transactionId'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer ${user.token ?? ""}',
           'x-secret-key': secreteKey,
         },
       );
@@ -126,19 +97,19 @@ class TransactionService {
   
   // Method to fetch user balance
   Future<BalanceInfo?> fetchBalance() async {
-    if (user.userId.isEmpty) {
+    final userId = await _getUserId();
+    if (userId.isEmpty) {
       log('Cannot fetch balance: User ID is empty');
       return null;
     }
     
     try {
-      log('Fetching balance for user: ${user.userId}');
+      log('Fetching balance for user: $userId');
       
       final response = await http.get(
-        Uri.parse('$newBaseUrl/user-balance/${user.userId}'),
+        Uri.parse('$newBaseUrl/user-balance/$userId'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer ${user.token ?? ""}',
           'x-secret-key': secreteKey,
         },
       );
@@ -161,19 +132,19 @@ class TransactionService {
   
   // Method to get transaction summary
   Future<Summary?> fetchTransactionSummary() async {
-    if (user.userId.isEmpty) {
+    final userId = await _getUserId();
+    if (userId.isEmpty) {
       log('Cannot fetch transaction summary: User ID is empty');
       return null;
     }
     
     try {
-      log('Fetching transaction summary for user: ${user.userId}');
+      log('Fetching transaction summary for user: $userId');
       
       final response = await http.get(
-        Uri.parse('$newBaseUrl/transaction-summary/${user.userId}'),
+        Uri.parse('$newBaseUrl/transaction-summary/$userId'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer ${user.token ?? ""}',
           'x-secret-key': secreteKey,
         },
       );

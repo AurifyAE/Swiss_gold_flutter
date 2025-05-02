@@ -40,6 +40,14 @@ class AuthViewModel extends BaseModel {
 
   bool get isGuest => _isGuest;
 
+  void logout() {
+  _userModel = null;
+  _messageModel = null;
+  _isGuest = false;
+  notifyListeners();
+}
+
+
  Future<void> checkGuestMode() async {
     try {
       _isGuest = await LocalStorage.getBool('isGuest') ?? false;
