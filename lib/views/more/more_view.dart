@@ -10,6 +10,7 @@ import 'package:swiss_gold/core/utils/navigate.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 import 'package:swiss_gold/core/view_models/cart_view_model.dart';
 import 'package:swiss_gold/core/view_models/transaction_view_model.dart';
+import 'package:swiss_gold/views/bank/bank_details.dart';
 import 'package:swiss_gold/views/login/login_view.dart';
 import 'package:swiss_gold/views/profile/profile_view.dart';
 import 'package:swiss_gold/views/transaction/transaction_view.dart';
@@ -206,6 +207,28 @@ void initState() {
                             align: MainAxisAlignment.start,
                             onTapped: () {
                               navigateTo(context, TransactionHistoryView());
+                            },
+                          ),
+                          SizedBox(height: 20.h),
+                        ],
+                      ),
+                    if (!isGuest)
+                      Column(
+                        children: [
+                          CustomOutlinedBtn(
+                            borderRadius: 12.sp,
+                            borderColor: UIColor.gold,
+                            padH: 20.w,
+                            padV: 20.h,
+                            btnIcon: PhosphorIcons.bank(),
+                            iconColor: UIColor.gold,
+                            btnText: 'Bank details',
+                            btnTextColor: UIColor.gold,
+                            suffixIcon: Icons.arrow_forward_ios,
+                            fontSize: 17.sp,
+                            align: MainAxisAlignment.start, 
+                            onTapped: () {
+                              navigateTo(context, BankDetailsView());
                             },
                           ),
                           SizedBox(height: 20.h),
