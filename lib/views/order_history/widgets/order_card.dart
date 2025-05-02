@@ -96,6 +96,10 @@ class OrderCard extends StatelessWidget {
                                       ? Colors.red
                                       : status == 'Success'
                                           ? Colors.lightGreen
+                                      : status == 'Approved'
+                                          ? Colors.lightGreen
+                                      : status == 'Pending'
+                                          ? Colors.yellowAccent.shade400 
                                           : status == 'User Approval Pending'
                                               ? Colors.orangeAccent
                                               : Colors.lightBlueAccent,

@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -7,11 +5,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:swiss_gold/core/services/product_service.dart';
 import 'package:swiss_gold/core/utils/colors.dart';
+import 'package:swiss_gold/core/utils/navigate.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_alert.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_outlined_btn.dart';
 import 'package:swiss_gold/core/utils/widgets/custom_snackbar.dart';
+import 'package:swiss_gold/core/view_models/cart_view_model.dart';
 import 'package:swiss_gold/core/view_models/order_history_view_model.dart';
 import 'package:swiss_gold/core/view_models/product_view_model.dart';
+import 'package:swiss_gold/views/delivery/delivery_view.dart';
 
 class ProductView extends StatefulWidget {
   final List<String> prodImg;
@@ -54,237 +55,167 @@ class _ProductViewState extends State<ProductView>
   double platinumPrice = 0;
   double copperPrice = 0;
   String selectedValue = '';
-  DateTime? selectedDate = DateTime.now();
+  DateTime selectedDate = DateTime.now();
   final PageController pageController = PageController();
   final PageController pageController2 = PageController();
 
   AnimationController? animationController;
   Animation<double>? animation;
+  
+  List<Map<String, dynamic>> bookingData = [];
 
-  Future<void> selectDate(
-      {String? paymentMethod, String? pricingOption, String? amount}) async {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return StatefulBuilder(builder: (context, setState) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                primaryColor: UIColor.gold,
-                colorScheme: ColorScheme.dark(
-                  onPrimary: UIColor.black, // header text color
-                  onSurface: UIColor.gold, // body text color
-                ),
-              ),
-              child: Material(
-                child: Scaffold(
-                  body: Container(
-                    color: UIColor.black,
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 20.h,
-                        ),
-                        Text(
-                          'Select delivery date ',
-                          style: TextStyle(
-                              color: UIColor.gold,
-                              fontFamily: 'Familiar',
-                              fontSize: 17.sp,
-                              fontWeight: FontWeight.normal),
-                        ),
-                        SizedBox(
-                          height: 50.h,
-                        ),
-                        CalendarDatePicker(
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                            onDateChanged: (date) {
-                              setState(() {
-                                selectedDate = date;
-                              });
-                            }),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 22.w),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Selected date : ',
-                                style: TextStyle(
-                                    color: UIColor.gold,
-                                    fontFamily: 'Familiar',
-                                    fontSize: 17.sp,
-                                    fontWeight: FontWeight.normal),
-                              ),
-                              Text(
-                                selectedDate.toString().split(' ')[0],
-                                style: TextStyle(
-                                    color: UIColor.gold,
-                                    fontFamily: 'Familiar',
-                                    fontSize: 17.sp,
-                                    fontWeight: FontWeight.normal),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: 40.h,
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 22.w),
-                          child: Row(
-                            children: [
-                              CustomOutlinedBtn(
-                                  borderRadius: 12.sp,
-                                  fontSize: 18.sp,
-                                  borderColor: UIColor.gold,
-                                  padH: 4.w,
-                                  padV: 8.h,
-                                  width: 100.w,
-                                  btnText: 'Cancel',
-                                  btnTextColor: UIColor.gold,
-                                  onTapped: () {
-                                    Navigator.pop(context);
-                                  }),
-                              Spacer(),
-                              CustomOutlinedBtn(
-                                borderRadius: 12.sp,
-                                width: 100.w,
-                                fontSize: 18.sp,
-                                borderColor: UIColor.gold,
-                                padH: 4.w,
-                                padV: 8.h,
-                                onTapped: () {
-                                  if (selectedDate != null) {
-                                    Map<String, dynamic> finalPayload = {
-                                      "bookingData": [
-                                        {
-                                          "productId": widget.pId,
-                                          "quantity": 1,
-                                        }
-                                      ],
-                                      "paymentMethod": selectedValue != 'Gold'
-                                          ? paymentMethod
-                                          : 'Gold',
-                                      if (selectedValue != 'Gold')
-                                        "pricingOption": pricingOption,
-                                      "deliveryDate":
-                                          selectedDate.toString().split(' ')[0]
-                                    };
+  StreamSubscription? _marketDataSubscription;
 
-                                    if (selectedValue == 'Gold' &&
-                                        (pricingOption == 'Premium')) {
-                                      finalPayload['premium'] = amount;
-                                    }
-                                    if (selectedValue == 'Gold' &&
-                                        (pricingOption == 'Discount')) {
-                                      finalPayload['discount'] = amount;
-                                    }
-                                    context
-                                        .read<ProductViewModel>()
-                                        .bookProducts(finalPayload)
-                                        .then((response) {
-                                      if (response!.success == true) {
-                                        Navigator.pop(context);
-                                        selectedDate = null;
-                                        selectedValue = '';
-                                        customSnackBar(
-                                            bgColor: UIColor.gold,
-                                            titleColor: UIColor.white,
-                                            width: 130.w,
-                                            context: context,
-                                            title: 'Booking success');
+  @override
+  void initState() {
+    super.initState();
 
-                                        Navigator.pop(context);
-                                      } else {
-                                        customSnackBar(
-                                            bgColor: UIColor.gold,
-                                            titleColor: UIColor.white,
-                                            width: 130.w,
-                                            context: context,
-                                            title: 'Booking failed');
-                                        Navigator.pop(context);
-                                      }
-                                    });
-                                  } else {
-                                    customSnackBar(
-                                        context: context,
-                                        bgColor: UIColor.gold,
-                                        titleColor: UIColor.white,
-                                        width: 200.w,
-                                        title: 'Please choose a delivery date');
-                                  }
-                                },
-                                btnTextColor: UIColor.gold,
-                                btnText: 'Confirm',
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          });
-        });
-  }
-StreamSubscription? _marketDataSubscription;
-
-@override
-void initState() {
-  super.initState();
-  
-  // Check if pricing data is already available before fetching
-  final orderHistoryViewModel = context.read<OrderHistoryViewModel>();
-  if (orderHistoryViewModel.cashPricingModel == null) {
-    orderHistoryViewModel.getCashPricing('Cash');
-  }
-  
-  if (orderHistoryViewModel.bankPricingModel == null) {
-    orderHistoryViewModel.getBankPricing('Bank');
-  }
-  
-  // Setup animation controller
-  animationController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 300),
-  );
-  
-  animation = CurvedAnimation(
-    parent: animationController!,
-    curve: Curves.easeInOut,
-  );
-  
-  // Get spot rate only if not already available
-  final productViewModel = context.read<ProductViewModel>();
-  if (productViewModel.goldSpotRate == null) {
-    productViewModel.getSpotRate();
-  }
-  
-  // Set up market data stream with proper subscription management
-  _marketDataSubscription = ProductService.marketDataStream.listen((marketData) {
-    // Store prices based on the symbol
-    String symbol = marketData['symbol'].toString().toLowerCase();
-
-    if (mounted) {
-      // Check if the widget is still mounted
-      if (symbol == 'gold') {
-        setState(() {
-          goldBid = (marketData['bid'] is int)
-              ? (marketData['bid'] as int).toDouble()
-              : marketData['bid'];
-        });
-      }
+    final orderHistoryViewModel = context.read<OrderHistoryViewModel>();
+    if (orderHistoryViewModel.cashPricingModel == null) {
+      orderHistoryViewModel.getCashPricing('Cash');
     }
-  });
-  
-  // Check guest mode if needed, but only once
-  if (productViewModel.isGuest == null) {
-    productViewModel.checkGuestMode();
+
+    if (orderHistoryViewModel.bankPricingModel == null) {
+      orderHistoryViewModel.getBankPricing('Bank');
+    }
+
+    animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    animation = CurvedAnimation(
+      parent: animationController!,
+      curve: Curves.easeInOut,
+    );
+
+    final productViewModel = context.read<ProductViewModel>();
+    if (productViewModel.goldSpotRate == null) {
+      productViewModel.getSpotRate();
+    }
+
+    _marketDataSubscription =
+        ProductService.marketDataStream.listen((marketData) {
+      String symbol = marketData['symbol'].toString().toLowerCase();
+
+      if (mounted) {
+        if (symbol == 'gold') {
+          setState(() {
+            goldBid = (marketData['bid'] is int)
+                ? (marketData['bid'] as int).toDouble()
+                : marketData['bid'];
+          });
+        }
+      }
+    });
+
+    if (productViewModel.isGuest == null) {
+      productViewModel.checkGuestMode();
+    }
   }
-}
+  
+  void incrementQuantity() {
+    final String productId = widget.pId;
+    
+    // Update booking data for this product
+    setState(() {
+      bookingData = [
+        {
+          "productId": productId,
+          "quantity": 1,
+        }
+      ];
+    });
+    
+    // If user is not in guest mode, update cart on the server
+    if (context.read<ProductViewModel>().isGuest == false) {
+      context.read<CartViewModel>().incrementQuantity(
+          {'pId': productId}).then((result) {
+        if (result != null && result.success == true) {
+          print('Cart incremented for product: $productId with quantity: 1');
+        } else {
+          print('Failed to increment cart: ${result?.message ?? "Unknown error"}');
+        }
+      }).catchError((error) {
+        print('Error incrementing cart: $error');
+      });
+    } else {
+      // User in guest mode, use admin ID "gyu123" for the cart operations
+      context.read<CartViewModel>().incrementQuantity(
+          {'pId': productId, 'userId': 'gyu123'}).then((result) {
+        if (result != null && result.success == true) {
+          print('Cart incremented for guest user with admin ID "gyu123" for product: $productId with quantity: 1');
+        } else {
+          print('Failed to increment cart for guest user: ${result?.message ?? "Unknown error"}');
+        }
+      }).catchError((error) {
+        print('Error incrementing cart for guest user: $error');
+      });
+    }
+  }
+
+  void navigateToDeliveryDetails({String? paymentMethod, String? pricingOption, String? amount}) {
+    final effectivePaymentMethod = 
+        selectedValue != 'Gold' ? (paymentMethod ?? 'Cash') : 'Gold';
+    
+    Map<String, dynamic> finalPayload = {
+      "bookingData": bookingData,
+      "paymentMethod": effectivePaymentMethod,
+      if (selectedValue != 'Gold' && pricingOption != null)
+        "pricingOption": pricingOption,
+      "deliveryDate": selectedDate.toString().split(' ')[0]
+    };
+
+    if (selectedValue == 'Gold' && 
+        pricingOption == 'Premium' && 
+        amount != null) {
+      finalPayload['premium'] = amount;
+    }
+    if (selectedValue != 'Gold' && 
+        pricingOption == 'Discount' && 
+        amount != null) {
+      finalPayload['discount'] = amount;
+    }
+
+    navigateWithAnimationTo(
+      context,
+      DeliveryDetailsView(
+        orderData: finalPayload,
+        onConfirm: (deliveryDetails) {
+          processOrder(finalPayload);
+        },
+      ),
+      0,
+      1,
+    );
+  }
+
+  void processOrder(Map<String, dynamic> finalPayload) {
+    print(finalPayload);
+    
+    if (finalPayload.containsKey("success") && finalPayload["success"] == true) {
+      setState(() {
+        selectedValue = '';
+        bookingData.clear();
+      });
+
+      customSnackBar(
+        bgColor: UIColor.gold,
+        titleColor: UIColor.white,
+        width: 130.w,
+        context: context,
+        title: 'Booking success'
+      );
+    } else {
+      customSnackBar(
+        bgColor: UIColor.gold,
+        titleColor: UIColor.white,
+        width: 130.w,
+        context: context,
+        title: 'Booking failed'
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -294,119 +225,74 @@ void initState() {
         bottomNavigationBar: Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
           child: CustomOutlinedBtn(
-              btnText: 'Order now',
-              btnTextColor: UIColor.gold,
-              borderColor: UIColor.gold,
-              borderRadius: 12.sp,
-              iconColor: UIColor.gold,
-              padH: 10.w,
-              padV: 14.h,
-              onTapped: () {
-               showAnimatedDialog2(
-                      context,
-                      animationController!,
-                      animation!,
-                      'Choose Your Payment Option',
-                      'You can either pay using cash or opt for gold as your preferred payment method. Select an option to proceed',
-                      [
-                        SizedBox(
-                          height: 30.h,
-                        ),
-                        CustomOutlinedBtn(
-                          borderRadius: 12.sp,
-                          borderColor: UIColor.gold,
-                          padH: 12.w,
-                          padV: 12.h,
-                          onTapped: () {
-                            selectedValue = 'Gold';
-
-                            Navigator.pop(context);
-
-                            selectDate();
-                          },
-                          btnTextColor: UIColor.gold,
-                          btnText: 'Gold',
-                        ),
-                        SizedBox(
-                          height: 10.h,
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            selectDate(paymentMethod: context.read<OrderHistoryViewModel>().cashPricingModel?.data.methodType,pricingOption: context.read<OrderHistoryViewModel>().cashPricingModel?.data.pricingType,amount: context.read<OrderHistoryViewModel>().cashPricingModel?.data.value.toString());
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 10.w, vertical: 10.h),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.sp),
-                              border: Border.all(color: UIColor.gold),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Cash',
-                                  style: TextStyle(
-                                      fontFamily: 'Familiar',
-                                      color: UIColor.gold,
-                                      fontSize: 14.sp),
-                                ),
-                                SizedBox(
-                                  width: 10.w,
-                                ),
-                                Text(
-                                  '${context.read<OrderHistoryViewModel>().cashPricingModel?.data.pricingType} :  ${context.read<OrderHistoryViewModel>().cashPricingModel?.data.value}',
-                                  style: TextStyle(
-                                      fontFamily: 'Familiar',
-                                      color: UIColor.gold,
-                                      fontSize: 13.sp),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 10.h,
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            selectDate(paymentMethod: context.read<OrderHistoryViewModel>().cashPricingModel?.data.methodType,pricingOption: context.read<OrderHistoryViewModel>().cashPricingModel?.data.pricingType,amount: context.read<OrderHistoryViewModel>().cashPricingModel?.data.value.toString());
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 10.w, vertical: 10.h),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.sp),
-                              border: Border.all(color: UIColor.gold),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Bank Transfer',
-                                  style: TextStyle(
-                                      fontFamily: 'Familiar',
-                                      color: UIColor.gold,
-                                      fontSize: 14.sp),
-                                ),
-                                SizedBox(
-                                  width: 10.w,
-                                ),
-                                Text(
-                                  '${context.read<OrderHistoryViewModel>().bankPricingModel?.data.pricingType} :  ${context.read<OrderHistoryViewModel>().bankPricingModel?.data.value}',
-                                  style: TextStyle(
-                                      fontFamily: 'Familiar',
-                                      color: UIColor.gold,
-                                      fontSize: 13.sp),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                      ]);
-              }),
+            btnText: 'Order now',
+            btnTextColor: UIColor.gold,
+            borderColor: UIColor.gold,
+            borderRadius: 12.sp,
+            iconColor: UIColor.gold,
+            padH: 10.w,
+            padV: 14.h,
+            onTapped: () {
+              // First increment the quantity
+              incrementQuantity();
+              
+              // Show payment options dialog
+              showAnimatedDialog2(
+                context,
+                animationController!,
+                animation!,
+                'Choose Your Payment Option',
+                'You can either pay using cash or opt for gold as your preferred payment method. Select an option to proceed',
+                [
+                  SizedBox(height: 30.h),
+                  CustomOutlinedBtn(
+                    borderRadius: 12.sp,
+                    borderColor: UIColor.gold,
+                    padH: 12.w,
+                    padV: 12.h,
+                    onTapped: () {
+                      selectedValue = 'Gold';
+                      Navigator.pop(context);
+                      navigateToDeliveryDetails();
+                    },
+                    btnTextColor: UIColor.gold,
+                    btnText: 'Gold to Gold',
+                  ),
+                  SizedBox(height: 10.h),
+                  CustomOutlinedBtn(
+                    borderRadius: 12.sp,
+                    borderColor: UIColor.gold,
+                    padH: 12.w,
+                    padV: 12.h,
+                    onTapped: () {
+                      selectedValue = 'Cash';
+                      Navigator.pop(context);
+                      navigateToDeliveryDetails(
+                        paymentMethod: context
+                            .read<OrderHistoryViewModel>()
+                            .cashPricingModel
+                            ?.data
+                            .methodType,
+                        pricingOption: context
+                            .read<OrderHistoryViewModel>()
+                            .cashPricingModel
+                            ?.data
+                            .pricingType,
+                        amount: context
+                            .read<OrderHistoryViewModel>()
+                            .cashPricingModel
+                            ?.data
+                            .value
+                            .toString()
+                      );
+                    },
+                    btnTextColor: UIColor.gold,
+                    btnText: 'Cash',
+                  ),
+                ]
+              );
+            },
+          ),
         ),
         appBar: AppBar(
           leading: IconButton(
@@ -497,45 +383,6 @@ void initState() {
                 SizedBox(
                   height: 10.h,
                 ),
-                // Consumer<ProductViewModel>(builder: (context, model, child) {
-                //   String priceToShow = widget.type.toLowerCase() == 'gold'
-                //       ? goldPrice.toStringAsFixed(2)
-                //       : '';
-
-                //   List<String> priceParts = priceToShow.split('.');
-                //   String integerPart = priceParts[0];
-                //   String decimalPart =
-                //       priceParts.length > 1 ? priceParts[1] : '';
-
-                //   goldPrice =
-                //       (((goldBid + model.goldSpotRate!.toDouble()) / 31.103) *
-                //               3.674 *
-                //               widget.weight *
-                //               widget.purity /
-                //               pow(10, widget.purity.toString().length) +
-                //           widget.makingCharge);
-
-                //   return RichText(
-                //       text: TextSpan(
-                //     children: [
-                //       TextSpan(
-                //         text: 'AED $integerPart',
-                //         style: TextStyle(
-                //           color: UIColor.gold,
-                //           fontFamily: 'Familiar',
-                //           fontSize: 19.sp,
-                //         ),
-                //       ),
-                //       TextSpan(
-                //         text: '.$decimalPart',
-                //         style: TextStyle(
-                //           color: UIColor.gold,
-                //           fontSize: 14.sp, // Smaller size for the decimal part
-                //         ),
-                //       ),
-                //     ],
-                //   ));
-                // }),
                 SizedBox(
                   height: 20.h,
                 ),
@@ -674,10 +521,9 @@ void initState() {
   }
 
   @override
-void dispose() {
-  // Clean up resources
-  _marketDataSubscription?.cancel();
-  animationController?.dispose();
-  super.dispose();
-}
+  void dispose() {
+    _marketDataSubscription?.cancel();   
+    animationController?.dispose();
+    super.dispose();
+  }
 }

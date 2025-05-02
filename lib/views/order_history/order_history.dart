@@ -62,7 +62,16 @@ class _OrderHistoryState extends State<OrderHistory> {
 
   void _loadOrders() {
     final model = context.read<OrderHistoryViewModel>();
+    currentPage = 1; // Reset to first page when loading orders
     model.getOrderHistory('1', query);
+  }
+
+  Future<void> _handleRefresh() async {
+    log('Refreshing orders');
+    final model = context.read<OrderHistoryViewModel>();
+    currentPage = 1; // Reset to first page on refresh
+    await model.getOrderHistory('1', query);
+    return Future.value();
   }
 
   @override
@@ -142,224 +151,241 @@ class _OrderHistoryState extends State<OrderHistory> {
               ),
             );
           } else if (model.allOrders.isEmpty) {
-            return Center(
-              child: Text(
-                'No orders found',
-                style: TextStyle(
-                  color: UIColor.gold,
-                  fontSize: 16.sp,
-                  fontFamily: 'Familiar',
+            return RefreshIndicator(
+              onRefresh: _handleRefresh,
+              color: UIColor.gold,
+              backgroundColor: UIColor.black,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.8,
+                  child: Center(
+                    child: Text(
+                      'No orders found',
+                      style: TextStyle(
+                        color: UIColor.gold,
+                        fontSize: 16.sp,
+                        fontFamily: 'Familiar',
+                      ),
+                    ),
+                  ),
                 ),
               ),
             );
           } else {
-            return Padding(
-              padding: EdgeInsets.only(top: 0.h, left: 16.w, right: 16.w),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                child: Column(
-                  children: [
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: model.allOrders.length,
-                      itemBuilder: (context, index) {
-                        final order = model.allOrders[index];
-                        
-                        return OrderCard(
-                          status: order.orderStatus,
-                          totalPrice: order.totalPrice,
-                          orderRemark: order.orderRemark,
-                          paymentMethod: order.paymentMethod,
-                          transactionId: order.transactionId,
-                          orderDate: order.orderDate,
-                          pricingOption: order.pricingOption,
-                          premiumAmount: order.premiumAmount != 0
-                              ? order.premiumAmount.toString()
-                              : null,
-                          discountAmount: order.discountAmount != 0
-                              ? order.discountAmount.toString()
-                              : null,
-                          expanded: isExpanded && currentIndex == index,
-                          icon: isExpanded && currentIndex == index
-                              ? Icons.arrow_drop_up
-                              : Icons.arrow_drop_down_outlined,
-                          onTap: () {
-                            setState(() {
-                              isExpanded = currentIndex == index ? !isExpanded : true;
-                              currentIndex = index;
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: Duration(milliseconds: 300),
-                            child: isExpanded && currentIndex == index
-                                ? SizedBox(
-                                    width: MediaQuery.of(context).size.width,
-                                    child: ListView.builder(
-                                      shrinkWrap: true,
-                                      itemCount: order.item.length,
-                                      itemBuilder: (context, itemIndex) {
-                                        final item = order.item[itemIndex];
-                                        return Container(
-                                          margin: EdgeInsets.only(
-                                            bottom: 10.h,
-                                            top: 20.h, 
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(12.sp),
-                                                child: CachedNetworkImage(
-                                                  imageUrl: item.product?.images.isNotEmpty == true
-                                                      ? item.product!.images[0]
-                                                      : '',
-                                                  width: 50.w,
-                                                  height: 50.w,
-                                                  fit: BoxFit.cover,
-                                                  errorWidget: (context, url, error) {
-                                                    return Image.asset(
-                                                      ImageAssets.prod,
-                                                      width: 80.w,
-                                                      height: 80.w,
-                                                      fit: BoxFit.cover,
-                                                    );
-                                                  },
+            return RefreshIndicator(
+              onRefresh: _handleRefresh,
+              color: UIColor.gold,
+              backgroundColor: UIColor.black,
+              child: Padding(
+                padding: EdgeInsets.only(top: 0.h, left: 16.w, right: 16.w),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  controller: scrollController,
+                  child: Column(
+                    children: [
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: model.allOrders.length,
+                        itemBuilder: (context, index) {
+                          final order = model.allOrders[index];
+                          
+                          return OrderCard(
+                            status: order.orderStatus,
+                            totalPrice: order.totalPrice,
+                            orderRemark: order.orderRemark,
+                            paymentMethod: order.paymentMethod,
+                            transactionId: order.transactionId,
+                            orderDate: order.orderDate,
+                            pricingOption: order.pricingOption,
+                            premiumAmount: order.premiumAmount != 0
+                                ? order.premiumAmount.toString()
+                                : null,
+                            discountAmount: order.discountAmount != 0
+                                ? order.discountAmount.toString()
+                                : null,
+                            expanded: isExpanded && currentIndex == index,
+                            icon: isExpanded && currentIndex == index
+                                ? Icons.arrow_drop_up
+                                : Icons.arrow_drop_down_outlined,
+                            onTap: () {
+                              setState(() {
+                                isExpanded = currentIndex == index ? !isExpanded : true;
+                                currentIndex = index;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: Duration(milliseconds: 300),
+                              child: isExpanded && currentIndex == index
+                                  ? SizedBox(
+                                      width: MediaQuery.of(context).size.width,
+                                      child: ListView.builder(
+                                        shrinkWrap: true,
+                                        itemCount: order.item.length,
+                                        itemBuilder: (context, itemIndex) {
+                                          final item = order.item[itemIndex];
+                                          return Container(
+                                            margin: EdgeInsets.only(
+                                              bottom: 10.h,
+                                              top: 20.h, 
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12.sp),
+                                                  child: CachedNetworkImage(
+                                                    imageUrl: item.product?.images.isNotEmpty == true
+                                                        ? item.product!.images[0]
+                                                        : '',
+                                                    width: 50.w,
+                                                    height: 50.w,
+                                                    fit: BoxFit.cover,
+                                                    errorWidget: (context, url, error) {
+                                                      return Image.asset(
+                                                        ImageAssets.prod,
+                                                        width: 80.w,
+                                                        height: 80.w,
+                                                        fit: BoxFit.cover,
+                                                      );
+                                                    },
+                                                  ),
                                                 ),
-                                              ),
-                                              SizedBox(width: 20.w),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      item.product?.title ?? 'Product',
-                                                      style: TextStyle(
-                                                        color: UIColor.gold,
-                                                        fontSize: 16.sp,
-                                                        fontFamily: 'Familiar',
-                                                        fontWeight: FontWeight.bold,
+                                                SizedBox(width: 20.w),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        item.product?.title ?? 'Product',
+                                                        style: TextStyle(
+                                                          color: UIColor.gold,
+                                                          fontSize: 16.sp,
+                                                          fontFamily: 'Familiar',
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    Text(
-                                                      'AED ${item.product?.price ?? 0}',
-                                                      style: TextStyle(
-                                                        color: UIColor.gold,
-                                                        fontSize: 16.sp,
-                                                        fontFamily: 'Familiar',
+                                                      Text(
+                                                        'AED ${item.product?.price ?? 0}',
+                                                        style: TextStyle(
+                                                          color: UIColor.gold,
+                                                          fontSize: 16.sp,
+                                                          fontFamily: 'Familiar',
+                                                        ),
                                                       ),
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Text(
-                                                          'Quantity:',
-                                                          style: TextStyle(
-                                                            color: UIColor.gold,
-                                                            fontSize: 16.sp,
-                                                            fontFamily: 'Familiar',
-                                                          ),
-                                                        ),
-                                                        SizedBox(width: 10.w),
-                                                        Text(
-                                                          item.quantity.toString(),
-                                                          style: TextStyle(
-                                                            color: UIColor.gold,
-                                                            fontSize: 16.sp,
-                                                            fontFamily: 'Familiar',
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Text(
-                                                          'Status:',
-                                                          style: TextStyle(
-                                                            color: UIColor.gold,
-                                                            fontSize: 16.sp,
-                                                            fontFamily: 'Familiar',
-                                                          ),
-                                                        ),
-                                                        SizedBox(width: 10.w),
-                                                        Container(
-                                                          padding: EdgeInsets.symmetric(
-                                                            horizontal: 5.w,
-                                                            vertical: 1.h,
-                                                          ),
-                                                          decoration: BoxDecoration(
-                                                            color: _getStatusColor(item.status),
-                                                            borderRadius:
-                                                                BorderRadius.circular(5.sp),
-                                                          ),
-                                                          child: Text(
-                                                            item.status,
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            'Quantity:',
                                                             style: TextStyle(
-                                                              color: UIColor.black,
-                                                              fontSize: 9.sp,
+                                                              color: UIColor.gold,
+                                                              fontSize: 16.sp,
                                                               fontFamily: 'Familiar',
                                                             ),
+                                                          ),
+                                                          SizedBox(width: 10.w),
+                                                          Text(
+                                                            item.quantity.toString(),
+                                                            style: TextStyle(
+                                                              color: UIColor.gold,
+                                                              fontSize: 16.sp,
+                                                              fontFamily: 'Familiar',
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            'Status:',
+                                                            style: TextStyle(
+                                                              color: UIColor.gold,
+                                                              fontSize: 16.sp,
+                                                              fontFamily: 'Familiar',
+                                                            ),
+                                                          ),
+                                                          SizedBox(width: 10.w),
+                                                          Container(
+                                                            padding: EdgeInsets.symmetric(
+                                                              horizontal: 5.w,
+                                                              vertical: 1.h,
+                                                            ),
+                                                            decoration: BoxDecoration(
+                                                              color: _getStatusColor(item.status),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(5.sp),
+                                                            ),
+                                                            child: Text(
+                                                              item.status,
+                                                              style: TextStyle(
+                                                                color: UIColor.black,
+                                                                fontSize: 9.sp,
+                                                                fontFamily: 'Familiar',
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  children: [
+                                                    Text(
+                                                      '${item.product?.weight ?? 0} g',
+                                                      style: TextStyle(
+                                                        color: UIColor.gold,
+                                                        fontSize: 16.sp,
+                                                        fontFamily: 'Familiar',
+                                                      ),
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          'Purity:',
+                                                          style: TextStyle(
+                                                            color: UIColor.gold,
+                                                            fontSize: 16.sp,
+                                                            fontFamily: 'Familiar',
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 5.w),
+                                                        Text(
+                                                          '${item.product?.purity ?? 0}K',
+                                                          style: TextStyle(
+                                                            color: UIColor.gold,
+                                                            fontSize: 16.sp,
+                                                            fontFamily: 'Familiar',
                                                           ),
                                                         ),
                                                       ],
                                                     ),
                                                   ],
                                                 ),
-                                              ),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  Text(
-                                                    '${item.product?.weight ?? 0} g',
-                                                    style: TextStyle(
-                                                      color: UIColor.gold,
-                                                      fontSize: 16.sp,
-                                                      fontFamily: 'Familiar',
-                                                    ),
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        'Purity:',
-                                                        style: TextStyle(
-                                                          color: UIColor.gold,
-                                                          fontSize: 16.sp,
-                                                          fontFamily: 'Familiar',
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: 5.w),
-                                                      Text(
-                                                        '${item.product?.purity ?? 0}K',
-                                                        style: TextStyle(
-                                                          color: UIColor.gold,
-                                                          fontSize: 16.sp,
-                                                          fontFamily: 'Familiar',
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  )
-                                : null,
-                          ),
-                        );
-                      },
-                    ),
-                    if (model.state == ViewState.loadingMore)
-                      Padding(
-                        padding: EdgeInsets.all(16.h),
-                        child: CircularProgressIndicator(
-                          color: UIColor.gold,
-                        ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          );
+                        },
                       ),
-                    SizedBox(height: 20.h),
-                  ],
+                      if (model.state == ViewState.loadingMore)
+                        Padding(
+                          padding: EdgeInsets.all(16.h),
+                          child: CircularProgressIndicator(
+                            color: UIColor.gold,
+                          ),
+                        ),
+                      SizedBox(height: 20.h),
+                    ],
+                  ),
                 ),
               ),
             );

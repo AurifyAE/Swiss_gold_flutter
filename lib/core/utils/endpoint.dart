@@ -50,7 +50,7 @@ const String changePassUrl = '$baseUrl/forgot-password/$adminId';
 
 const String getVideoBannerUrl = 'https://api.aurify.ae/user/get-VideoBanner/67586119baf55a80a8277f01';
 
-const String confirmQuantityUrl = '$baseUrl/order_quantity_confirmation';
+const String confirmQuantityUrl = '$newBaseUrl/order_quantity_confirmation';
 
 const String getOrderHistoryUrl =
     '$newBaseUrl/fetch-order/$adminId/{userId}?page={index}&orderStatus={status}';
