@@ -12,17 +12,21 @@ class CustomCard extends StatelessWidget {
   final void Function()? onIncrement;
   final void Function()? onDecrement;
   final void Function()? onAddToCart;
-  const CustomCard(
-      {super.key,
-      required this.prodImg,
-      required this.quantity,
-      required this.title,
-      required this.price,
-      this.subTitle,
-      this.onTap,
-      this.onIncrement,
-      this.onDecrement,
-      this.onAddToCart});
+  final void Function(int)? onQuantityEntered; // New callback for direct quantity input
+  
+  const CustomCard({
+    super.key,
+    required this.prodImg,
+    required this.quantity,
+    required this.title,
+    required this.price,
+    this.subTitle,
+    this.onTap,
+    this.onIncrement,
+    this.onDecrement,
+    this.onAddToCart,
+    this.onQuantityEntered, // Add this parameter
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -121,13 +125,79 @@ class CustomCard extends StatelessWidget {
                   // SizedBox(
                   //   width: 10.w,
                   // ),
-                  Text(
-                    quantity.toString(),
-                    style: TextStyle(
-                      color: UIColor.gold,
-                      fontSize: 26.sp,
-                    ),
-                  ),
+                  GestureDetector(
+  onTap: () {
+    // Show dialog for entering quantity
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String newQuantity = quantity.toString();
+        return AlertDialog(
+          backgroundColor: UIColor.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: UIColor.gold, width: 2),
+          ),
+          title: Text(
+            'Enter Quantity',
+            style: TextStyle(color: UIColor.gold),
+          ),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            style: TextStyle(color: UIColor.gold),
+            decoration: InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: UIColor.gold),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: UIColor.gold),
+              ),
+            ),
+            onChanged: (value) {
+              // Allow only digits
+              if (value.isNotEmpty && int.tryParse(value) != null) {
+                newQuantity = value;
+              }
+            },
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: UIColor.gold),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text(
+                'OK',
+                style: TextStyle(color: UIColor.gold),
+              ),
+              onPressed: () {
+                if (newQuantity.isNotEmpty && int.tryParse(newQuantity) != null) {
+                  // Call the provided callback with the new quantity
+                  if (onQuantityEntered != null) {
+                    onQuantityEntered!(int.parse(newQuantity));
+                  }
+                }
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  },
+  child: Text(
+    quantity.toString(),
+    style: TextStyle(
+      color: UIColor.gold,
+      fontSize: 26.sp,
+    ),
+  ),
+),
                   // SizedBox(
                   //   width: 10.w,
                   // ),
