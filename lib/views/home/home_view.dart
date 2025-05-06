@@ -476,98 +476,171 @@ void incrementQuantity(int index) {
                       ),
                     );
                   } else {
+
+                    void updateQuantityDirectly(int index, int newQuantity) {
+  if (index >= context.read<ProductViewModel>().productList.length) {
+    log('Invalid index: $index for product list');
+    return;
+  }
+
+  final product = context.read<ProductViewModel>().productList[index];
+  final String productId = product.pId;
+  
+  // Calculate difference for booking data
+  final int oldQuantity = productQuantities[index] ?? 0;
+  final int difference = newQuantity - oldQuantity;
+  
+  log('Updating quantity directly for product: $productId at index: $index from $oldQuantity to $newQuantity');
+
+  // Update local state
+  setState(() {
+    if (newQuantity > 0) {
+      productQuantities[index] = newQuantity;
+      log('Updated quantity: $newQuantity for index: $index');
+    } else {
+      productQuantities.remove(index);
+      log('Removed index: $index from productQuantities as quantity is 0');
+    }
+
+    // Update the total quantity in ProductViewModel
+    context
+        .read<ProductViewModel>()
+        .getTotalQuantity(Map<int, int>.from(productQuantities));
+
+    // Update booking data
+    if (difference > 0) {
+      // Add the difference to booking data
+      for (int i = 0; i < difference; i++) {
+        addToBookingData(index, product.pId);
+      }
+    } else if (difference < 0) {
+      // Remove the absolute difference from booking data
+      for (int i = 0; i < difference.abs(); i++) {
+        removeFromBookingData(index, product.pId);
+      }
+    }
+  });
+
+  // If user is not in guest mode, update cart on the server
+  if (context.read<ProductViewModel>().isGuest == false) {
+    context.read<CartViewModel>().updateQuantityFromHome(
+      productId, 
+      {'quantity': newQuantity}
+    ).then((result) {
+      if (result != null && result.success == true) {
+        log('Cart updated for product: $productId with quantity: $newQuantity');
+      } else {
+        log('Failed to update cart: ${result?.message ?? "Unknown error"}');
+      }
+    }).catchError((error) {
+      log('Error updating cart: $error');
+    });
+  } else {
+    // User in guest mode, use admin ID "gyu123" for the cart operations
+    context.read<CartViewModel>().updateQuantityFromHome(
+      productId, 
+      {'quantity': newQuantity, 'userId': 'gyu123'}
+    ).then((result) {
+      if (result != null && result.success == true) {
+        log('Cart updated for guest user with admin ID "gyu123" for product: $productId with quantity: $newQuantity');
+      } else {
+        log('Failed to update cart for guest user: ${result?.message ?? "Unknown error"}');
+      }
+    }).catchError((error) {
+      log('Error updating cart for guest user: $error');
+    });
+    log('User in guest mode, cart updated on server with admin ID: gyu123');
+  }
+}
                     return Column(
                       children: [
                         GridView.builder(
-                          physics: NeverScrollableScrollPhysics(),
-                          key: PageStorageKey('productKey'),
-                          shrinkWrap: true,
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 1.2,
-                                  mainAxisSpacing: 16.h,
-                                  crossAxisSpacing: 16.w),
-                          itemCount: model.productList.length,
-                          itemBuilder: (context, index) {
-                            final product = model.productList[index];
+  physics: NeverScrollableScrollPhysics(),
+  key: PageStorageKey('productKey'),
+  shrinkWrap: true,
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      childAspectRatio: 1.2,
+      mainAxisSpacing: 16.h,
+      crossAxisSpacing: 16.w),
+  itemCount: model.productList.length,
+  itemBuilder: (context, index) {
+    final product = model.productList[index];
 
-                            final String productId = product.pId;
-                            final String imageUrl = product.prodImgs.isNotEmpty
-                                ? product.prodImgs[0].url
-                                : 'https://via.placeholder.com/150';
-                            final String title =
-                                product.title;
-                            final int quantity = productQuantities[index] ?? 0;
-                            final String price = product.type?.toLowerCase() ==
-                                    'gold'
-                                ? 'AED ${(model.goldSpotRate ?? 0).toStringAsFixed(2)}'
-                                : 'AED ${(product.price).toStringAsFixed(2)}';
-                            final String productType =
-                                product.type ?? 'Unknown';
+    final String productId = product.pId;
+    final String imageUrl = product.prodImgs.isNotEmpty
+        ? product.prodImgs[0].url
+        : 'https://via.placeholder.com/150';
+    final String title = product.title;
+    final int quantity = productQuantities[index] ?? 0;
+    final String price = product.type?.toLowerCase() == 'gold'
+        ? 'AED ${(model.goldSpotRate ?? 0).toStringAsFixed(2)}'
+        : 'AED ${(product.price).toStringAsFixed(2)}';
+    final String productType = product.type ?? 'Unknown';
 
-                            return CustomCard(
-                              onIncrement: () => incrementQuantity(index),
-                              onDecrement: () => decrementQuantity(index),
-                              onAddToCart: () {
-                                if (model.isGuest == false) {
-                                  context
-                                      .read<CartViewModel>()
-                                      .updateQuantityFromHome(productId, {
-                                    'quantity': productQuantities[index] ?? 1
-                                  }).then((response) {
-                                    if (response?.success == true) {
-                                      setState(() {
-                                        productQuantities.remove(index);
-                                      });
-                                      context
-                                          .read<ProductViewModel>()
-                                          .getTotalQuantity(Map<int, int>.from(
-                                              productQuantities));
-                                    }
-                                    customSnackBar(
-                                      context: context,
-                                      width: 250.w,
-                                      bgColor: UIColor.gold,
-                                      title: response?.message?.toString() ??
-                                          'Action completed',
-                                    );
-                                  });
-                                } else {
-                                  Navigator.pushAndRemoveUntil(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => LoginView()),
-                                      (route) => false);
-                                }
-                              },
-                              prodImg: imageUrl,
-                              title: title,
-                              quantity: quantity,
-                              price: price,
-                              subTitle: productType,
-                              onTap: () {
-                                navigateWithAnimationTo(
-                                    context,
-                                    ProductView(
-                                      prodImg: product.prodImgs
-                                          .map((e) => e.url)
-                                          .toList(),
-                                      title: title,
-                                      pId: productId,
-                                      desc: product.desc,
-                                      type: productType,
-                                      stock: product.stock,
-                                      purity: product.purity,
-                                      weight: product.weight,
-                                      makingCharge: product.makingCharge,
-                                    ),
-                                    0,
-                                    1);
-                              },
-                            );
-                          },
-                        ),
+    return CustomCard(
+      onIncrement: () => incrementQuantity(index),
+      onDecrement: () => decrementQuantity(index),
+      onQuantityEntered: (newQuantity) => updateQuantityDirectly(index, newQuantity), // Add this line
+      onAddToCart: () {
+        if (model.isGuest == false) {
+          context
+              .read<CartViewModel>()
+              .updateQuantityFromHome(productId, {
+            'quantity': productQuantities[index] ?? 1
+          }).then((response) {
+            if (response?.success == true) {
+              setState(() {
+                productQuantities.remove(index);
+              });
+              context
+                  .read<ProductViewModel>()
+                  .getTotalQuantity(Map<int, int>.from(
+                      productQuantities));
+            }
+            customSnackBar(
+              context: context,
+              width: 250.w,
+              bgColor: UIColor.gold,
+              title: response?.message?.toString() ??
+                  'Action completed',
+            );
+          });
+        } else {
+          Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => LoginView()),
+              (route) => false);
+        }
+      },
+      prodImg: imageUrl,
+      title: title,
+      quantity: quantity,
+      price: price,
+      subTitle: productType,
+      onTap: () {
+        navigateWithAnimationTo(
+            context,
+            ProductView(
+              prodImg: product.prodImgs
+                  .map((e) => e.url)
+                  .toList(),
+              title: title,
+              pId: productId,
+              desc: product.desc,
+              type: productType,
+              stock: product.stock,
+              purity: product.purity,
+              weight: product.weight,
+              makingCharge: product.makingCharge,
+            ),
+            0,
+            1);
+      },
+    );
+  },
+),
                         if (model.state == ViewState.loadingMore)
                           Padding(
                             padding: EdgeInsets.only(top: 20.h),

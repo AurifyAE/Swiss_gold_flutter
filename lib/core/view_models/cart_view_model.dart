@@ -65,6 +65,8 @@ class CartViewModel extends BaseModel {
     return _messageModel;
   }
 
+  
+
   Future<void> checkGuestMode() async {
     _isGuest = await LocalStorage.getBool('isGuest');
     notifyListeners();
