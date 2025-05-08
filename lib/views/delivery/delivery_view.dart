@@ -107,24 +107,53 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
 
   
 
-  double calculateTotalAmount(
+double calculateTotalAmount(
       ProductViewModel productViewModel, GoldRateProvider goldRateProvider) {
     double totalAmount = 0.0;
     List bookingData = widget.orderData["bookingData"] as List;
 
     dev.log("Starting total amount calculation...");
 
-    double bidPrice = goldRateProvider.goldData != null
-        ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) /
-            31.103 *
-            3.674
-        : 0.0;
+    // Calculate bidPrice using the new formula
+    double bidPrice = 0.0;
+    
+    if (goldRateProvider.goldData != null) {
+      // Get the original bid value
+      double originalBid = double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0;
+      dev.log("Original bid from socket: $originalBid");
+      
+      // Calculate asking price using the formula if spot rate data is available
+      if (goldRateProvider.spotRateData != null) {
+        double bidSpread = goldRateProvider.spotRateData!.goldBidSpread;
+        double askSpread = goldRateProvider.spotRateData!.goldAskSpread;
+        
+        // Step 1: bid + bidspread = bidding price
+        double biddingPrice = originalBid + bidSpread;
+        dev.log("Bidding price: $originalBid (bid) + $bidSpread (bid spread) = $biddingPrice");
+        
+        // Step 2: bidding price + ask spread + 0.5 = asking price
+        double askingPrice = biddingPrice + askSpread + 0.5;
+        dev.log("Asking price: $biddingPrice (bidding price) + $askSpread (ask spread) + 0.5 = $askingPrice");
+        
+        // Step 3: Use asking price as bid price for calculations
+        bidPrice = askingPrice / 31.103 * 3.674; // Convert to AED/g
+        dev.log("Final bid price for calculations: $askingPrice / 31.103 × 3.674 = $bidPrice AED/g (converted from troy oz)");
+      } else {
+        // Fallback to original calculation if spot rate data is not available
+        bidPrice = originalBid / 31.103 * 3.674;
+        dev.log("Using original bid price (no spot rates): $originalBid / 31.103 × 3.674 = $bidPrice AED/g (converted from troy oz)");
+      }
+    } else {
+      dev.log("Warning: Gold data is not available, using zero for bid price");
+    }
 
-    dev.log("Current bid price: $bidPrice AED/g (conversion from troy oz)");
+    dev.log("Using bid price for calculations: $bidPrice AED/g");
 
     for (var item in bookingData) {
       String productId = item["productId"];
       int quantity = item["quantity"] ?? 1;
+
+      dev.log("Processing product ID: $productId, quantity: $quantity");
 
       Product? product = productViewModel.productList.firstWhere(
         (p) => p.pId == productId,
@@ -132,6 +161,7 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
 
       double productPrice = 0.0;
       double purityFactor = calculatePurityPower(product.purity);
+      dev.log("Product purity: ${product.purity}, calculated purity factor: $purityFactor");
 
       productPrice = bidPrice * purityFactor * product.weight.toDouble();
 
@@ -211,24 +241,34 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
   @override
   Widget build(BuildContext context) {
     final productViewModel = Provider.of<ProductViewModel>(context);
-    final goldRateProvider = Provider.of<GoldRateProvider>(context);
+  final goldRateProvider = Provider.of<GoldRateProvider>(context);
 
-    final isGoldPayment = widget.orderData["paymentMethod"] == 'Gold';
-    final totalWeight = calculateTotalWeight(productViewModel);
-    final totalAmount =
-        calculateTotalAmount(productViewModel, goldRateProvider);
+  final isGoldPayment = widget.orderData["paymentMethod"] == 'Gold';
+  final totalWeight = calculateTotalWeight(productViewModel);
+  final totalAmount = calculateTotalAmount(productViewModel, goldRateProvider);
+  
+  // Get the bidPrice directly from the calculateTotalAmount function
+  double bidPrice = 0.0;
+  if (goldRateProvider.goldData != null) {
+    // Calculate bidPrice using the same formula from calculateTotalAmount
+    double originalBid = double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0;
+    
+    if (goldRateProvider.spotRateData != null) {
+      double bidSpread = goldRateProvider.spotRateData!.goldBidSpread;
+      double askSpread = goldRateProvider.spotRateData!.goldAskSpread;
+      double biddingPrice = originalBid + bidSpread;
+      double askingPrice = biddingPrice + askSpread + 0.5;
+      double finalBid = 
+      bidPrice = askingPrice / 31.103 * 3.674; // Convert to AED/g
+    } else {
+      bidPrice = originalBid / 31.103 * 3.674;
+    }
+  }
 
-    dev.log("Payment method: ${isGoldPayment ? 'Gold' : 'Cash'}");
-    dev.log("Total weight summary: $totalWeight g");
-    dev.log("Total amount summary: $totalAmount AED");
-
-    final bidPrice = goldRateProvider.goldData != null
-        ? (double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0) /
-            31.103 *
-            3.674
-        : 0.0;
-
-    dev.log("Current bid price for display: $bidPrice AED/g");
+  dev.log("Payment method: ${isGoldPayment ? 'Gold' : 'Cash'}");
+  dev.log("Total weight summary: $totalWeight g");
+  dev.log("Total amount summary: $totalAmount AED");
+  dev.log("Current bid price for display: $bidPrice AED/g");
 
     return Scaffold(
       appBar: AppBar(
@@ -894,35 +934,39 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                   padV: 12.h,
                   width: 200.w,
                   onTapped: () async {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (BuildContext context) {
-                        return Center(
-                          child: CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(UIColor.gold),
-                          ),
-                        );
-                      },
-                    );
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(UIColor.gold),
+        ),
+      );
+    },
+  );
 
-                    try {
-                      final productViewModel =
-                          Provider.of<ProductViewModel>(context, listen: false);
-                      final goldRateProvider =
-                          Provider.of<GoldRateProvider>(context, listen: false);
+  try {
+    final productViewModel = Provider.of<ProductViewModel>(context, listen: false);
+    final goldRateProvider = Provider.of<GoldRateProvider>(context, listen: false);
 
-                      final double bidPrice = goldRateProvider.goldData != null
-                          ? (double.tryParse(
-                                      '${goldRateProvider.goldData!['bid']}') ??
-                                  0.0) /
-                              31.103 *
-                              3.674
-                          : 0.0;
+    // Use the same bidPrice calculation as in calculateTotalAmount
+    double bidPrice = 0.0;
+    if (goldRateProvider.goldData != null) {
+      double originalBid = double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0;
+      
+      if (goldRateProvider.spotRateData != null) {
+        double bidSpread = goldRateProvider.spotRateData!.goldBidSpread;
+        double askSpread = goldRateProvider.spotRateData!.goldAskSpread;
+        double biddingPrice = originalBid + bidSpread;
+        double askingPrice = biddingPrice + askSpread + 0.5;
+        bidPrice = askingPrice / 31.103 * 3.674;
+      } else {
+        bidPrice = originalBid / 31.103 * 3.674;
+      }
+    }
 
-                      dev.log(
-                          "Final order submission - Current bid price: $bidPrice AED/g");
+    dev.log("Final order submission - Current bid price: $bidPrice AED/g");
 
                       List<Map<String, dynamic>> bookingDataWithFixedPrices =
                           [];

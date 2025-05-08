@@ -190,11 +190,20 @@ class CustomCard extends StatelessWidget {
       },
     );
   },
-  child: Text(
-    quantity.toString(),
-    style: TextStyle(
-      color: UIColor.gold,
-      fontSize: 26.sp,
+  child: SizedBox(
+    width: 20.w, // Limit the width space for the number
+    height: 40.h,
+    child: Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          quantity.toString(),
+          style: TextStyle(
+            color: UIColor.gold,
+            fontSize: 26.sp,
+          ),
+        ),
+      ),
     ),
   ),
 ),

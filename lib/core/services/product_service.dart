@@ -100,8 +100,11 @@ class ProductService {
       // Fetch products using the flexible fetching method
       final products = await fetchProducts(adminId, categoryId);
 
-      // Extract product identifiers (using SKU as symbols)
-      return products.map((product) => product['sku'].toString()).toList();
+      // Extract product identifiers (using SKU as symbols) from products with stock=true
+      return products
+          .where((product) => product['stock'] == true)
+          .map((product) => product['sku'].toString())
+          .toList();
     } catch (e) {
       log('Error fetching product symbols: ${e.toString()}');
       return [];
@@ -143,71 +146,71 @@ class ProductService {
     }
   }
 
-static Future<int> getProductCount(String categoryId) async {
-  try {
-    final url = 'https://api.nova.aurify.ae/user/product-count/$categoryId';
-    log('Checking product count for categoryId: $categoryId');
-    
-    final response = await client.get(
-      Uri.parse(url),
-      headers: {
-        'X-Secret-Key': secreteKey,
-        'Content-Type': 'application/json',
-      },
-    );
-    
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = json.decode(response.body);
-      if (responseData['success'] == true) {
-        final int count = responseData['productCount'] ?? 0;
-        log('Product count for categoryId $categoryId: $count');
-        return count;
+  static Future<int> getProductCount(String categoryId) async {
+    try {
+      final url = 'https://api.nova.aurify.ae/user/product-count/$categoryId';
+      log('Checking product count for categoryId: $categoryId');
+      
+      final response = await client.get(
+        Uri.parse(url),
+        headers: {
+          'X-Secret-Key': secreteKey,
+          'Content-Type': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData['success'] == true) {
+          final int count = responseData['productCount'] ?? 0;
+          log('Product count for categoryId $categoryId: $count');
+          return count;
+        }
       }
+      
+      log('Failed to get product count, status: ${response.statusCode}');
+      return 0;
+    } catch (e) {
+      log('Error getting product count: ${e.toString()}');
+      return 0;
     }
-    
-    log('Failed to get product count, status: ${response.statusCode}');
-    return 0;
-  } catch (e) {
-    log('Error getting product count: ${e.toString()}');
-    return 0;
   }
-}
 
-static Future<List<dynamic>> fetchProducts([String? adminId, String? categoryId]) async {
-  try {
-    // Use provided parameters or fetch from storage if not provided
-    String finalAdminId = adminId ?? '67f37dfe4831e0eb637d09f1';
-    String finalCategoryId = categoryId ?? await LocalStorage.getString('categoryId') ?? '';
-    
-    // Check product count if categoryId is available
-    int productCount = 0;
-    if (finalCategoryId.isNotEmpty) {
-      productCount = await getProductCount(finalCategoryId);
-    }
-    
-    // Determine which parameters to use based on product count
-    String baseUrl = 'https://api.nova.aurify.ae/user/get-product';
-    String url;
-    
-    if (productCount > 0) {
-      // Use categoryId with null adminId
-      url = '$baseUrl/null/$finalCategoryId';
-      log('Using categoryId only because product count > 0');
-    } else {
-      // Use adminId with null categoryId
-      url = '$baseUrl/$finalAdminId';
-      log('Using adminId only because product count = 0');
-    }
-    
-    log('Making request to URL: $url');
-    
-    final response = await client.get(
-      Uri.parse(url),
-      headers: {
-        'X-Secret-Key': secreteKey,
-        'Content-Type': 'application/json',
-      },
-    );
+  static Future<List<dynamic>> fetchProducts([String? adminId, String? categoryId]) async {
+    try {
+      // Use provided parameters or fetch from storage if not provided
+      String finalAdminId = adminId ?? '67f37dfe4831e0eb637d09f1';
+      String finalCategoryId = categoryId ?? await LocalStorage.getString('categoryId') ?? ''; 
+      
+      // Check product count if categoryId is available
+      int productCount = 0;
+      if (finalCategoryId.isNotEmpty) {
+        productCount = await getProductCount(finalCategoryId);
+      }
+      
+      // Determine which parameters to use based on product count
+      String baseUrl = 'https://api.nova.aurify.ae/user/get-product';
+      String url;
+      
+      if (productCount > 0) {
+        // Use categoryId with null adminId
+        url = '$baseUrl/null/$finalCategoryId';
+        log('Using categoryId only because product count > 0');
+      } else {
+        // Use adminId with null categoryId
+        url = '$baseUrl/$finalAdminId';
+        log('Using adminId only because product count = 0');
+      }
+      
+      log('Making request to URL: $url');
+      
+      final response = await client.get(
+        Uri.parse(url),
+        headers: {
+          'X-Secret-Key': secreteKey,
+          'Content-Type': 'application/json',
+        },
+      );
 
       log('Response status code: ${response.statusCode}');
 
@@ -216,7 +219,14 @@ static Future<List<dynamic>> fetchProducts([String? adminId, String? categoryId]
         log('Response data: ${responseData.toString()}');
 
         if (responseData['success'] == true && responseData['data'] != null) {
-          return responseData['data'];
+          // Filter products where stock is true
+          List<dynamic> allProducts = responseData['data'];
+          List<dynamic> inStockProducts = allProducts.where((product) => 
+            product['stock'] == true
+          ).toList();
+          
+          log('Filtered ${inStockProducts.length} products with stock=true out of ${allProducts.length} total products');
+          return inStockProducts;
         } else {
           log('API returned success=false or null data');
           return [];

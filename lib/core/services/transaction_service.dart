@@ -31,11 +31,11 @@ class TransactionService {
     try {
       log('Fetching transactions for user: $userId, page: $page');
       
-      final Uri uri = Uri.parse('$newBaseUrl/fetch-transtion/$userId')
-        .replace(queryParameters: {
-          'page': '$page',
-          'limit': '$limit'
-        });
+      final Uri uri = Uri.parse('https://api.nova.aurify.ae/user/fetch-transaction/$userId');
+        // .replace(queryParameters: {
+        //   'page': '$page',
+        //   'limit': '$limit'
+        // });
       
       final response = await http.get(
         uri,

@@ -181,12 +181,13 @@ class ProductViewModel extends BaseModel {
 
       log('Fetching products with adminId: $finalAdminId, categoryId: $finalCategoryId, page: $pageIndex');
 
-     final productsData = await ProductService.fetchProducts(
-      adminId ?? _adminId,
-      categoryId ?? _categoryId
-    );
+      // Get the products from the service (already filtered for stock=true)
+      final productsData = await ProductService.fetchProducts(
+        adminId ?? _adminId,
+        categoryId ?? _categoryId
+      );
 
-      log('API returned ${productsData.length} products');
+      log('API returned ${productsData.length} in-stock products');
 
       if (pageIndex == "0") {
         _productList.clear();

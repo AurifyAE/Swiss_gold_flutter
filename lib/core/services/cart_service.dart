@@ -20,18 +20,13 @@ class CartService {
         headers: {
           'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'
-        }, // Encoding payload to JSON
+        },
       );
 
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = jsonDecode(response.body);
-
-        // log(responseData.toString());
         return CartModel.fromJson(responseData);
       } else {
-        //  Map<String, dynamic> responseData = jsonDecode(response.body);
-
-        // log(responseData.toString());
         return null;
       }
     } catch (e) {
@@ -54,7 +49,7 @@ class CartService {
           headers: {
             'X-Secret-Key': secreteKey,
             'Content-Type': 'application/json'
-          }, // Encoding payload to JSON
+          },
           body: jsonEncode(payload));
 
       if (response.statusCode == 200) {
@@ -65,38 +60,47 @@ class CartService {
         return MessageModel.fromJson(responseData);
       }
     } catch (e) {
+      log('Error updating quantity from home: $e');
       return null;
     }
   }
 
-  // static Future<MessageModel?> addToCart(Map<String, dynamic> payload) async {
-  //   try {
-  //     final id = await LocalStorage.getString('userId');
-
-  //     final url = addToCartUrl
-  //         .replaceFirst('{userId}', id.toString())
-  //         .replaceFirst('{pId}', payload['pId']);
-  //     var response = await client.post(Uri.parse(url),
-  //         headers: {
-  //           'X-Secret-Key': secreteKey,
-  //           'Content-Type': 'application/json'
-  //         }, // Encoding payload to JSON
-  //         body: jsonEncode(payload));
-
-  //     if (response.statusCode == 200) {
-  //       Map<String, dynamic> responseData = jsonDecode(response.body);
-  //       log(response.body);
-  //       return MessageModel.fromJson(responseData);
-  //     } else {
-  //       Map<String, dynamic> responseData = jsonDecode(response.body);
-  //       log(response.body);
-  //       return MessageModel.fromJson(responseData);
-  //     }
-  //   } catch (e) {
-  //     // log(e.toString());
-  //     return null;
-  //   }
-  // }
+  static Future<MessageModel?> updateCartQuantity(
+      String productId, int quantity) async {
+    try {
+      final userId = await LocalStorage.getString('userId');
+      final adminId = await LocalStorage.getString('adminId') ?? 'default'; // Get adminId or use default
+      
+      final url = 'https://api.nova.aurify.ae/user/cart/update-quantity/$adminId/$userId/$productId';
+      log('Updating cart quantity URL: $url');
+      log('Payload: {"quantity": $quantity}');
+      
+      var response = await client.put(
+        Uri.parse(url),
+        headers: {
+          'X-Secret-Key': secreteKey,
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({
+          "quantity": quantity
+        })
+      );
+      
+      log('Response status: ${response.statusCode}');
+      log('Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        return MessageModel.fromJson(responseData);
+      } else {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        return MessageModel.fromJson(responseData);
+      }
+    } catch (e) {
+      log('Error updating cart quantity: $e');
+      return null;
+    }
+  }
 
   static Future<void> confirmQuantity(Map<String, dynamic> payload) async {
     try {
@@ -104,7 +108,7 @@ class CartService {
           headers: {
             'X-Secret-Key': secreteKey,
             'Content-Type': 'application/json'
-          }, // Encoding payload to JSON
+          },
           body: jsonEncode(payload));
 
       if (response.statusCode == 200) {
@@ -117,39 +121,39 @@ class CartService {
     }
   }
 
-static Future<MessageModel?> incrementQuantity(Map<String, dynamic> payload) async {
-  try {
-    final id = await LocalStorage.getString('userId');
+  static Future<MessageModel?> incrementQuantity(Map<String, dynamic> payload) async {
+    try {
+      final id = await LocalStorage.getString('userId');
 
-    final url = incrementQuantityUrl
-        .replaceFirst('{userId}', id.toString())
-        .replaceFirst('{pId}', payload['pId']);
-    log('Increment URL: $url');  // Log the URL
-    log('Payload: $payload');    // Log the payload
-    
-    var response = await client.patch(
-      Uri.parse(url),
-      headers: {
-        'X-Secret-Key': secreteKey,
-        'Content-Type': 'application/json'
-      },
-    );
+      final url = incrementQuantityUrl
+          .replaceFirst('{userId}', id.toString())
+          .replaceFirst('{pId}', payload['pId']);
+      log('Increment URL: $url');
+      log('Payload: $payload');
+      
+      var response = await client.patch(
+        Uri.parse(url),
+        headers: {
+          'X-Secret-Key': secreteKey,
+          'Content-Type': 'application/json'
+        },
+      );
 
-    log('Response status: ${response.statusCode}');  // Log response status
-    log('Response body: ${response.body}');         // Log response body
+      log('Response status: ${response.statusCode}');
+      log('Response body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      Map<String, dynamic> responseData = jsonDecode(response.body);
-      return MessageModel.fromJson(responseData);
-    } else {
-      Map<String, dynamic> responseData = jsonDecode(response.body);
-      return MessageModel.fromJson(responseData);
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        return MessageModel.fromJson(responseData);
+      } else {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        return MessageModel.fromJson(responseData);
+      }
+    } catch (e) {
+      log('Error in incrementQuantity: $e');
+      return null;
     }
-  } catch (e) {
-    log('Error in incrementQuantity: $e');  // Log the specific error
-    return null;
   }
-}
 
   static Future<MessageModel?> decrementQuantity(
       Map<String, dynamic> payload) async {
@@ -164,7 +168,7 @@ static Future<MessageModel?> incrementQuantity(Map<String, dynamic> payload) asy
         headers: {
           'X-Secret-Key': secreteKey,
           'Content-Type': 'application/json'
-        }, // Encoding payload to JSON
+        },
       );
 
       if (response.statusCode == 200) {
@@ -175,7 +179,7 @@ static Future<MessageModel?> incrementQuantity(Map<String, dynamic> payload) asy
         return MessageModel.fromJson(responseData);
       }
     } catch (e) {
-      // log(e.toString());
+      log('Error in decrementQuantity: $e');
       return null;
     }
   }
@@ -193,7 +197,7 @@ static Future<MessageModel?> incrementQuantity(Map<String, dynamic> payload) asy
           headers: {
             'X-Secret-Key': secreteKey,
             'Content-Type': 'application/json'
-          }, // Encoding payload to JSON
+          },
           body: jsonEncode(payload));
 
       if (response.statusCode == 200) {
@@ -204,7 +208,7 @@ static Future<MessageModel?> incrementQuantity(Map<String, dynamic> payload) asy
         return MessageModel.fromJson(responseData);
       }
     } catch (e) {
-      // log(e.toString());
+      log('Error in deleteFromCart: $e');
       return null;
     }
   }

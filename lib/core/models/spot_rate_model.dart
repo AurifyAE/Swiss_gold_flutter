@@ -252,3 +252,56 @@
 //         "_id": id,
 //       };
 // }
+
+
+class SpotRateModel {
+  final String id;
+  final String createdBy;
+  final int version;
+  final double goldAskSpread;
+  final double goldBidSpread;
+  final double goldHighMargin;
+  final double goldLowMargin;
+
+  SpotRateModel({
+    required this.id,
+    required this.createdBy,
+    required this.version,
+    required this.goldAskSpread,
+    required this.goldBidSpread,
+    required this.goldHighMargin,
+    required this.goldLowMargin,
+  });
+
+  factory SpotRateModel.fromJson(Map<String, dynamic> json) {
+    return SpotRateModel(
+      id: json['_id'] ?? '',
+      createdBy: json['createdBy'] ?? '',
+      version: json['__v'] ?? 0,
+      goldAskSpread: (json['goldAskSpread'] is num) 
+          ? (json['goldAskSpread'] as num).toDouble() 
+          : 0.0,
+      goldBidSpread: (json['goldBidSpread'] is num) 
+          ? (json['goldBidSpread'] as num).toDouble() 
+          : 0.0,
+      goldHighMargin: (json['goldHighMargin'] is num) 
+          ? (json['goldHighMargin'] as num).toDouble() 
+          : 0.0,
+      goldLowMargin: (json['goldLowMargin'] is num) 
+          ? (json['goldLowMargin'] as num).toDouble() 
+          : 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'createdBy': createdBy,
+      '__v': version,
+      'goldAskSpread': goldAskSpread,
+      'goldBidSpread': goldBidSpread,
+      'goldHighMargin': goldHighMargin,
+      'goldLowMargin': goldLowMargin,
+    };
+  }
+}

@@ -477,7 +477,7 @@ void incrementQuantity(int index) {
                     );
                   } else {
 
-                    void updateQuantityDirectly(int index, int newQuantity) {
+              void updateQuantityDirectly(int index, int newQuantity) {
   if (index >= context.read<ProductViewModel>().productList.length) {
     log('Invalid index: $index for product list');
     return;
@@ -521,14 +521,21 @@ void incrementQuantity(int index) {
     }
   });
 
-  // If user is not in guest mode, update cart on the server
+  // If user is not in guest mode, update cart on the server using the new endpoint
   if (context.read<ProductViewModel>().isGuest == false) {
-    context.read<CartViewModel>().updateQuantityFromHome(
+    context.read<CartViewModel>().updateCartQuantity(
       productId, 
-      {'quantity': newQuantity}
+      newQuantity
     ).then((result) {
       if (result != null && result.success == true) {
         log('Cart updated for product: $productId with quantity: $newQuantity');
+        
+        // Navigate to delivery page if needed
+        if (bookingData.isNotEmpty && newQuantity > 0) {
+          // Optionally trigger navigation to delivery page
+          // This would typically happen in response to a user action
+          // like clicking "Place Order" button
+        }
       } else {
         log('Failed to update cart: ${result?.message ?? "Unknown error"}');
       }
@@ -536,20 +543,8 @@ void incrementQuantity(int index) {
       log('Error updating cart: $error');
     });
   } else {
-    // User in guest mode, use admin ID "gyu123" for the cart operations
-    context.read<CartViewModel>().updateQuantityFromHome(
-      productId, 
-      {'quantity': newQuantity, 'userId': 'gyu123'}
-    ).then((result) {
-      if (result != null && result.success == true) {
-        log('Cart updated for guest user with admin ID "gyu123" for product: $productId with quantity: $newQuantity');
-      } else {
-        log('Failed to update cart for guest user: ${result?.message ?? "Unknown error"}');
-      }
-    }).catchError((error) {
-      log('Error updating cart for guest user: $error');
-    });
-    log('User in guest mode, cart updated on server with admin ID: gyu123');
+    // User in guest mode - handle guest logic
+    log('User in guest mode, cart not updated on server');
   }
 }
                     return Column(
