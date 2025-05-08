@@ -253,16 +253,35 @@ double calculateTotalAmount(
     // Calculate bidPrice using the same formula from calculateTotalAmount
     double originalBid = double.tryParse('${goldRateProvider.goldData!['bid']}') ?? 0.0;
     
-    if (goldRateProvider.spotRateData != null) {
-      double bidSpread = goldRateProvider.spotRateData!.goldBidSpread;
-      double askSpread = goldRateProvider.spotRateData!.goldAskSpread;
-      double biddingPrice = originalBid + bidSpread;
-      double askingPrice = biddingPrice + askSpread + 0.5;
-      double finalBid = 
-      bidPrice = askingPrice / 31.103 * 3.674; // Convert to AED/g
-    } else {
-      bidPrice = originalBid / 31.103 * 3.674;
+   if (goldRateProvider.spotRateData != null) {
+  double bidSpread = goldRateProvider.spotRateData!.goldBidSpread;
+  double askSpread = goldRateProvider.spotRateData!.goldAskSpread;
+  double biddingPrice = originalBid + bidSpread;
+  double askingPrice = biddingPrice + askSpread + 0.5;
+  
+  // Process all products in the order to determine pricing adjustments
+  List bookingData = widget.orderData["bookingData"] as List;
+  for (var item in bookingData) {
+    String itemProductId = item["productId"];
+    Product? product = getProductById(itemProductId, productViewModel);
+    
+    if (product != null) {
+      if (product.pricingType == 'Premium' && product.value != null) {
+        // Add the premium value to asking price
+        askingPrice += product.value!.toDouble();
+        dev.log("Applied premium: +${product.value}. New asking price: $askingPrice");
+      } else if (product.pricingType == 'Discount' && product.value != null) {
+        // Subtract the discount value from asking price
+        askingPrice -= product.value!.toDouble();
+        dev.log("Applied discount: -${product.value}. New asking price: $askingPrice");
+      }
     }
+  }
+  
+  bidPrice = askingPrice / 31.103 * 3.674; // Convert to AED/g
+} else {
+  bidPrice = originalBid / 31.103 * 3.674;
+}
   }
 
   dev.log("Payment method: ${isGoldPayment ? 'Gold' : 'Cash'}");
