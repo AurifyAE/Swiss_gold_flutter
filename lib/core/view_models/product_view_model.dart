@@ -42,9 +42,17 @@ class ProductViewModel extends BaseModel {
 
   String? _adminId;
   String? _categoryId;
+  String? _userSpotRateId;
+
+  bool _hasCategoryId = false;
+  bool _hasUserSpotRateId = false;
 
   String? get adminId => _adminId;
   String? get categoryId => _categoryId;
+  String? get userSpotRateId => _userSpotRateId;
+
+  bool get hasCategoryId => _hasCategoryId;
+  bool get hasUserSpotRateId => _hasUserSpotRateId;
 
   ProductViewModel() {
     _initializeIds();
@@ -54,13 +62,25 @@ class ProductViewModel extends BaseModel {
   Future<void> _initializeIds() async {
     try {
       _adminId = '67f37dfe4831e0eb637d09f1';
-      _categoryId = await LocalStorage.getString('categoryId') ?? '';
+      
+      // Use the new category status check function
+      final userStatus = await ProductService.checkCategoryStatus();
+      _hasCategoryId = userStatus['hasCategoryId'];
+      _hasUserSpotRateId = userStatus['hasUserSpotRateId'];
+      _categoryId = _hasCategoryId ? userStatus['categoryId'] : '';
+      _userSpotRateId = _hasUserSpotRateId ? userStatus['userSpotRateId'] : '';
 
-      log('Initialized ProductViewModel with adminId: $_adminId, categoryId: $_categoryId');
+      log('Initialized ProductViewModel with:');
+      log('adminId: $_adminId');
+      log('hasCategoryId: $_hasCategoryId, categoryId: $_categoryId');
+      log('hasUserSpotRateId: $_hasUserSpotRateId, userSpotRateId: $_userSpotRateId');
     } catch (e) {
       log('Error initializing IDs: ${e.toString()}');
       _adminId = '';
       _categoryId = '';
+      _userSpotRateId = '';
+      _hasCategoryId = false;
+      _hasUserSpotRateId = false;
     }
     notifyListeners();
   }
@@ -176,12 +196,8 @@ class ProductViewModel extends BaseModel {
     isLoading = true;
 
     try {
-      final String finalAdminId = adminId ?? _adminId ?? '';
-      final String finalCategoryId = categoryId ?? _categoryId ?? '';
-
-      log('Fetching products with adminId: $finalAdminId, categoryId: $finalCategoryId, page: $pageIndex');
-
-      // Get the products from the service (already filtered for stock=true)
+      // Use the newly-structured fetchProducts method that handles the 
+      // categoryId, adminId, and userSpotRateId selection logic
       final productsData = await ProductService.fetchProducts(
         adminId ?? _adminId,
         categoryId ?? _categoryId
@@ -221,5 +237,11 @@ class ProductViewModel extends BaseModel {
       _fetchInProgress = false;
       notifyListeners();
     }
+  }
+  
+  // Method to refresh user status and products
+  Future<void> refreshUserStatus() async {
+    await _initializeIds();
+    await fetchProducts();
   }
 }

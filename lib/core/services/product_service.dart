@@ -176,71 +176,134 @@ class ProductService {
     }
   }
 
-  static Future<List<dynamic>> fetchProducts([String? adminId, String? categoryId]) async {
-    try {
-      // Use provided parameters or fetch from storage if not provided
-      String finalAdminId = adminId ?? '67f37dfe4831e0eb637d09f1';
-      String finalCategoryId = categoryId ?? await LocalStorage.getString('categoryId') ?? ''; 
-      
-      // Check product count if categoryId is available
-      int productCount = 0;
-      if (finalCategoryId.isNotEmpty) {
-        productCount = await getProductCount(finalCategoryId);
-      }
-      
-      // Determine which parameters to use based on product count
-      String baseUrl = 'https://api.nova.aurify.ae/user/get-product';
-      String url;
-      
-      if (productCount > 0) {
-        // Use categoryId with null adminId
-        url = '$baseUrl/null/$finalCategoryId';
-        log('Using categoryId only because product count > 0');
-      } else {
-        // Use adminId with null categoryId
-        url = '$baseUrl/$finalAdminId';
-        log('Using adminId only because product count = 0');
-      }
-      
-      log('Making request to URL: $url');
-      
-      final response = await client.get(
-        Uri.parse(url),
-        headers: {
-          'X-Secret-Key': secreteKey,
-          'Content-Type': 'application/json',
-        },
-      );
-
-      log('Response status code: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        log('Response data: ${responseData.toString()}');
-
-        if (responseData['success'] == true && responseData['data'] != null) {
-          // Filter products where stock is true
-          List<dynamic> allProducts = responseData['data'];
-          List<dynamic> inStockProducts = allProducts.where((product) => 
-            product['stock'] == true
-          ).toList();
-          
-          log('Filtered ${inStockProducts.length} products with stock=true out of ${allProducts.length} total products');
-          return inStockProducts;
-        } else {
-          log('API returned success=false or null data');
-          return [];
-        }
-      } else {
-        log('API returned error status code: ${response.statusCode}');
-        log('Response body: ${response.body}');
-        throw Exception('Failed to load products: ${response.statusCode}');
-      }
-    } catch (e) {
-      log('Error fetching products: ${e.toString()}');
-      return [];
+  static Future<Map<String, dynamic>> checkCategoryStatus() async {
+  try {
+    final userId = await LocalStorage.getString('userId') ?? '';
+    if (userId.isEmpty) {
+      log('Error: userId is empty for category status check');
+      return {
+        'hasCategoryId': false,
+        'hasUserSpotRateId': false,
+        'categoryId': '',
+        'userSpotRateId': ''
+      };
     }
+
+    final url = 'https://api.nova.aurify.ae/user/check-category-status/$userId';
+    log('Checking category status for userId: $userId');
+    
+    final response = await client.get(
+      Uri.parse(url),
+      headers: {
+        'X-Secret-Key': secreteKey,
+        'Content-Type': 'application/json',
+      },
+    );
+    
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      if (responseData['success'] == true && responseData['user'] != null) {
+        final user = responseData['user'];
+        log('User category status: hasCategoryId=${user['hasCategoryId']}, hasUserSpotRateId=${user['hasUserSpotRateId']}');
+        
+        return {
+          'hasCategoryId': user['hasCategoryId'] ?? false,
+          'hasUserSpotRateId': user['hasUserSpotRateId'] ?? false,
+          'categoryId': user['categoryId'] ?? '',
+          'userSpotRateId': user['userSpotRateId'] ?? ''
+        };
+      }
+    }
+    
+    log('Failed to get category status, status: ${response.statusCode}');
+    return {
+      'hasCategoryId': false,
+      'hasUserSpotRateId': false,
+      'categoryId': '',
+      'userSpotRateId': ''
+    };
+  } catch (e) {
+    log('Error checking category status: ${e.toString()}');
+    return {
+      'hasCategoryId': false,
+      'hasUserSpotRateId': false,
+      'categoryId': '',
+      'userSpotRateId': ''
+    };
   }
+}
+
+// Updated fetchProducts function
+static Future<List<dynamic>> fetchProducts([String? adminId, String? categoryId]) async {
+  try {
+    // First check the user's category status
+    final userStatus = await checkCategoryStatus();
+    final bool hasCategoryId = userStatus['hasCategoryId'];
+    final bool hasUserSpotRateId = userStatus['hasUserSpotRateId'];
+    
+    // Get stored values if parameters aren't provided
+    String finalAdminId = adminId ?? '67f37dfe4831e0eb637d09f1';
+    String finalCategoryId = categoryId ?? 
+                            (hasCategoryId ? userStatus['categoryId'] : '');
+    String userSpotRateId = hasUserSpotRateId ? userStatus['userSpotRateId'] : '';
+    
+    // Determine which parameters to use based on user status
+    String baseUrl = 'https://api.nova.aurify.ae/user/get-product';
+    String url;
+    
+    if (hasCategoryId) {
+      // Use categoryId with null adminId and null userSpotRateId
+      url = '$baseUrl/null/$finalCategoryId/null';
+      log('Using categoryId: $finalCategoryId (adminId and userSpotRateId set to null)');
+    } else if (hasUserSpotRateId) {
+      // Use userSpotRateId with null adminId and null categoryId
+      url = '$baseUrl/null/null/$userSpotRateId';
+      log('Using userSpotRateId: $userSpotRateId (adminId and categoryId set to null)');
+    } else {
+      // Use adminId with null categoryId and null userSpotRateId
+      url = '$baseUrl/$finalAdminId/null/null';
+      log('Using adminId: $finalAdminId (categoryId and userSpotRateId set to null)');
+    }
+    
+    log('Making request to URL: $url');
+    
+    final response = await client.get(
+      Uri.parse(url),
+      headers: {
+        'X-Secret-Key': secreteKey,
+        'Content-Type': 'application/json',
+      },
+    );
+
+    log('Response status code: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      log('Response data: ${responseData.toString()}');
+
+      if (responseData['success'] == true && responseData['data'] != null) {
+        // Filter products where stock is true
+        List<dynamic> allProducts = responseData['data'];
+        List<dynamic> inStockProducts = allProducts.where((product) => 
+          product['stock'] == true
+        ).toList();
+        
+        log('Filtered ${inStockProducts.length} products with stock=true out of ${allProducts.length} total products');
+        return inStockProducts;
+      } else {
+        log('API returned success=false or null data');
+        return [];
+      }
+    } else {
+      log('API returned error status code: ${response.statusCode}');
+      log('Response body: ${response.body}');
+      throw Exception('Failed to load products: ${response.statusCode}');
+    }
+  } catch (e) {
+    log('Error fetching products: ${e.toString()}');
+    return [];
+  }
+}
 
   static Future<MessageModel?> fixPrice(Map<String, dynamic> payload) async {
     try {
