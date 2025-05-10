@@ -238,6 +238,14 @@ class ProductViewModel extends BaseModel {
       notifyListeners();
     }
   }
+
+  void clearProducts() {
+  _productList.clear();
+  hasMoreData = true;
+  _fetchInProgress = false;
+  setState(ViewState.idle);
+  notifyListeners();
+}
   
   // Method to refresh user status and products
   Future<void> refreshUserStatus() async {

@@ -335,35 +335,35 @@ void incrementQuantity(int index) {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      focusNode: _pageFocusNode,
-      child: Scaffold(
-        bottomNavigationBar: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Row(
-            children: [
-              Consumer<ProductViewModel>(
-                builder: (context, model, child) => Text(
-                  'Total Quantity: ${model.totalQuantity}',
-                  style: TextStyle(
-                      color: UIColor.gold,
-                      fontFamily: 'Familiar',
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.normal),
-                ),
+ @override
+Widget build(BuildContext context) {
+  return Focus(
+    focusNode: _pageFocusNode,
+    child: Scaffold(
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: Row(
+          children: [
+            Consumer<ProductViewModel>(
+              builder: (context, model, child) => Text(
+                'Total Quantity: ${model.totalQuantity}',
+                style: TextStyle(
+                    color: UIColor.gold,
+                    fontFamily: 'Familiar',
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.normal),
               ),
-              Spacer(),
-              Flexible(
-                  child: CustomOutlinedBtn(
-                btnTextColor: UIColor.gold,
-                height: 40.h,
-                borderRadius: 12.sp,
-                borderColor: UIColor.gold,
-                padH: 5.w,
-                padV: 5.h,
-                onTapped: () {
+            ),
+            Spacer(),
+            Flexible(
+                child: CustomOutlinedBtn(
+              btnTextColor: UIColor.gold,
+              height: 40.h,
+              borderRadius: 12.sp,
+              borderColor: UIColor.gold,
+              padH: 5.w,
+              padV: 5.h,
+              onTapped: () {
                   if (bookingData.isNotEmpty) {
                     showAnimatedDialog2(
                         context,
@@ -437,12 +437,39 @@ void incrementQuantity(int index) {
           ),
         ),
         body: Padding(
-          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+        child: RefreshIndicator(
+          backgroundColor: Colors.transparent, 
+          color: UIColor.gold,
+          onRefresh: () async {
+            // Reset to first page
+            currentPage = 1;
+            
+            // Get the ProductViewModel
+            final model = context.read<ProductViewModel>();
+            
+            // First clear products
+            model.clearProducts();
+            
+            // Refresh user status and fetch products
+            await model.refreshUserStatus();
+            
+            // Also refresh market data if available
+            model.getSpotRate();
+            
+            // Sync quantities from view model
+            _syncQuantitiesFromViewModel();
+            
+            // Return completed future
+            return Future.value();
+          },
           child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(), // Important for pull to refresh
             controller: scrollController,
             child: Column(
               children: [
-                Consumer<ProductViewModel>(builder: (context, model, child) {
+                Consumer<ProductViewModel>(
+                  builder: (context, model, child) {
                   if (model.state == ViewState.loading) {
                     return GridView.builder(
                         shrinkWrap: true,
@@ -653,7 +680,7 @@ void incrementQuantity(int index) {
           ),
         ),
       ),
-    );
+    ));
   }
 
   @override
