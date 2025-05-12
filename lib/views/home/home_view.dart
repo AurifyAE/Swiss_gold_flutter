@@ -449,7 +449,7 @@ Widget build(BuildContext context) {
             final model = context.read<ProductViewModel>();
             
             // First clear products
-            model.clearProducts();
+            model.clearProducts(); 
             
             // Refresh user status and fetch products
             await model.refreshUserStatus();

@@ -891,30 +891,30 @@ class _DeliveryDetailsViewState extends State<DeliveryDetailsView> {
                             ),
                           ],
                         ),
-                        if (makingCharge > 0) ...[
-                          SizedBox(height: 4.h),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Making Charge:',
-                                style: TextStyle(
-                                  color: UIColor.gold,
-                                  fontFamily: 'Familiar',
-                                  fontSize: 14.sp,
-                                ),
-                              ),
-                              Text(
-                                'AED ${formatNumber(makingCharge)}',
-                                style: TextStyle(
-                                  color: UIColor.gold,
-                                  fontFamily: 'Familiar',
-                                  fontSize: 14.sp,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        // if (makingCharge > 0) ...[
+                        //   SizedBox(height: 4.h),
+                        //   Row(
+                        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        //     children: [
+                        //       Text(
+                        //         'Making Charge:',
+                        //         style: TextStyle(
+                        //           color: UIColor.gold,
+                        //           fontFamily: 'Familiar',
+                        //           fontSize: 14.sp,
+                        //         ),
+                        //       ),
+                        //       Text(
+                        //         'AED ${formatNumber(makingCharge)}',
+                        //         style: TextStyle(
+                        //           color: UIColor.gold,
+                        //           fontFamily: 'Familiar',
+                        //           fontSize: 14.sp,
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ],
                         SizedBox(height: 4.h),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -404,7 +404,11 @@ class _OrderHistoryState extends State<OrderHistory> {
         return Colors.orange;
       case 'Success':
         return Colors.green;
+      case 'Approved':
+        return Colors.green;
       case 'Approval Pending':
+        return Colors.blue;
+      case 'UserApprovalPending': 
         return Colors.blue;
       default:
         return UIColor.gold;
